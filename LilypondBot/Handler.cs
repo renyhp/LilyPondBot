@@ -65,8 +65,11 @@ namespace LilypondBot
 			if (File.Exists (pngpath))
 				dummy = Api.SendPhoto (chatid, pngpath).Result;
 
-			File.Delete (pngpath);
-			File.Delete (srcpath);
+			//clean directory
+			var matchingfiles = Directory.EnumerateFiles (Directory.GetCurrentDirectory ()).Where (x => x.Contains (filename));
+			foreach (var f in matchingfiles) {
+				File.Delete (f);
+			}
 
 			return;
 		}
@@ -83,10 +86,8 @@ namespace LilypondBot
 			string filename;
 			var exists = false;
 			do {
-				filename = "lala" + counter;
-				//DateTime.UtcNow.ToString ("yyMMddHHmmssff-") + (username ?? counter.ToString ());
-				var files = Directory.EnumerateFiles (Directory.GetCurrentDirectory ()).Select (x => Path.GetFileName (x));
-				exists = files.Any (x => x.StartsWith (filename));
+				filename = DateTime.UtcNow.ToString ("yyMMddHHmmssff-") + (username ?? counter.ToString ());
+				exists = Directory.EnumerateFiles (Directory.GetCurrentDirectory ()).Where (x => x.Contains (filename)).Any ();
 				counter++;
 			} while (exists);
 			return filename;
