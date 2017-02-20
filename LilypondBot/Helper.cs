@@ -21,6 +21,18 @@ namespace LilypondBot
 			return Program.Bot.SendTextMessageAsync (chatId, text.FormatHTML (), true, false, replyid, replyMarkup, ParseMode.Html);
 		}
 
+		public static Task<Message> SendFile (long chatid, string path)
+		{
+			string filename = Path.GetFileName (path);
+			return Program.Bot.SendDocumentAsync (chatid, new FileToSend (filename, new FileStream (path, FileMode.Open)));
+		}
+
+		public static Task<Message> SendPhoto (long chatid, string path)
+		{
+			string filename = Path.GetFileName (path);
+			return Program.Bot.SendPhotoAsync (chatid, new FileToSend (filename, new FileStream (path, FileMode.Open)));
+		}
+
 		public static string FormatHTML (this string str)
 		{
 			return str.Replace (">", "&gt;").Replace ("<", "&lt;").Replace ("&", "&amp;");

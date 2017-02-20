@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -25,33 +26,47 @@ namespace LilypondBot
 			}
 
 			//first of all, where do we store the file	
-			//TODO: append ly and png extension to generatefilename
 			string filename = GenerateFilename (msg.From.Username);
 			string path = Path.Combine (Directory.GetCurrentDirectory (), filename);
+			string srcfile = filename + ".ly";
+			string srcpath = path + ".ly";
+			string pngpath = path + ".png";
 			string text = msg.Text;
+
+			//set paper settings
+			text = @"" + text;
 
 			//get rid of missing version warning
 			if (!text.Contains (@"\version "))
 				text = @"\version """ + GetLilyVersion () + "\"" + Environment.NewLine + text;
 			
-			File.WriteAllText (path, text);
+			File.WriteAllText (srcpath, text);
 
 			//ok, compile
-			var process = Lilypond ("--png --loglevel=BASIC_PROGRESS " + path);
+			var process = Lilypond ("-dbackend=eps -dresolution=600 --png --loglevel=WARN " + srcpath);
 
 			string error = "";
 			string output = Run (process, out error) ?? "";
 
-			NormalizeOutput (error, path, filename);
-			NormalizeOutput (output, path, filename);
+			NormalizeOutput (error, srcpath, srcfile);
 
-			//TODO: Send the stderror if any warning/error.
-			//TODO: Send png
-			//TODO: delete the files!
-			Api.Send (chatid, "OUTPUT\n\n" + output);
-			Api.Send (chatid, "ERROR\n\n" + error);
+			Message dummy; //I'm noob and I'll use this to wait for Api to do its work
 
+			if (error != "")
+				Api.Send (chatid, error);
+			if (output != "") { //gonna want to know
+				Api.Send (Settings.renyhp, "OUTPUT\n\n" + output);
+				Api.Send (Settings.renyhp, "ERROR\n\n" + error);
+				dummy = Api.SendFile (Settings.renyhp, srcpath).Result;
+				if (File.Exists (pngpath))
+					dummy = Api.SendFile (Settings.renyhp, pngpath).Result;
+			}
 
+			if (File.Exists (pngpath))
+				dummy = Api.SendPhoto (chatid, pngpath).Result;
+
+			File.Delete (pngpath);
+			File.Delete (srcpath);
 
 			return;
 		}
@@ -66,12 +81,14 @@ namespace LilypondBot
 		{
 			int counter = 0;
 			string filename;
+			var exists = false;
 			do {
-				//TODO: leva l'estensione da lì
-				filename = DateTime.UtcNow.ToString ("yyMMddHHmmssff-") + (username ?? counter.ToString ()) + ".ly";
+				filename = "lala" + counter;
+				//DateTime.UtcNow.ToString ("yyMMddHHmmssff-") + (username ?? counter.ToString ());
+				var files = Directory.EnumerateFiles (Directory.GetCurrentDirectory ()).Select (x => Path.GetFileName (x));
+				exists = files.Any (x => x.StartsWith (filename));
 				counter++;
-				//TODO: check for ly, png, ps existing
-			} while (File.Exists (Path.Combine (Directory.GetCurrentDirectory (), filename)));
+			} while (exists);
 			return filename;
 		}
 

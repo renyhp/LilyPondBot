@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Reflection;
 using System.Globalization;
 using System.IO;
 using System.Threading;
@@ -19,10 +21,11 @@ namespace LilypondBot
 
 		public static void Main (string[] args)
 		{
+			Console.Title = "LilyPondBot " + FileVersionInfo.GetVersionInfo (Assembly.GetExecutingAssembly ().Location).FileVersion;
 			var token = File.ReadAllText (Settings.TokenPath);
 			Bot = new TelegramBotClient (token);
 			Me = Bot.GetMeAsync ().Result;
-			Console.WriteLine ("Connected to @" + Me.Username);
+			Console.WriteLine ("Successfully connected to @" + Me.Username);
 
 			Bot.OnUpdate += Bot_OnUpdate;
 			Bot.OnCallbackQuery += Bot_OnCallbackQuery;
@@ -64,12 +67,13 @@ namespace LilypondBot
 
 		static void LogError (Exception e)
 		{
-			var msg = DateTime.Now.ToString ("yyyy/MM/dd HH:mm:ss.fff", CultureInfo.InvariantCulture) + " - ";
+			var msg = "";
 			do {
-				msg += e.Message + Environment.NewLine + e.StackTrace + Environment.NewLine + Environment.NewLine;
+				msg = DateTime.Now.ToString ("yyyy/MM/dd HH:mm:ss.fff", CultureInfo.InvariantCulture) + " - " +
+				e.Message + Environment.NewLine + e.StackTrace + Environment.NewLine + Environment.NewLine;
+				Bot.SendTextMessageAsync (Settings.renyhp, msg);
 				e = e.InnerException;
 			} while (e == null);
-			Bot.SendTextMessageAsync (Settings.renyhp, msg);
 			return;
 		}
 
