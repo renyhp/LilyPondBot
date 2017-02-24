@@ -12,6 +12,7 @@ namespace LilypondBot
 {
 	public static class Handler
 	{
+
 		public static void HandleUpdate (Update u)
 		{
 			var msg = u.Message;
@@ -27,10 +28,10 @@ namespace LilypondBot
 
 			//first of all, where do we store the file	
 			string filename = GenerateFilename (msg.From.Username);
-			string path = Path.Combine (Directory.GetCurrentDirectory (), filename);
+			Directory.CreateDirectory (Path.Combine (Directory.GetCurrentDirectory, filename)); //create new directory
+			string path = Path.Combine (Directory.GetCurrentDirectory (), filename); //path to the new directory
 			string srcfile = filename + ".ly";
-			string srcpath = path + ".ly";
-			string pngpath = path + ".png";
+			string srcpath = Path.Combine (path, srcfile);
 			string text = msg.Text;
 
 			//set paper settings
@@ -50,26 +51,26 @@ namespace LilypondBot
 
 			NormalizeOutput (error, srcpath, srcfile);
 
-			Message dummy; //I'm noob and I'll use this to wait for Api to do its work
-
 			if (error != "")
 				Api.Send (chatid, error);
+
 			if (output != "") { //gonna want to know
 				Api.Send (Settings.renyhp, "OUTPUT\n\n" + output);
 				Api.Send (Settings.renyhp, "ERROR\n\n" + error);
-				dummy = Api.SendFile (Settings.renyhp, srcpath).Result;
-				if (File.Exists (pngpath))
-					dummy = Api.SendFile (Settings.renyhp, pngpath).Result;
+				Api.SendFile (Settings.renyhp, srcpath).Result;
 			}
 
-			if (File.Exists (pngpath))
-				dummy = Api.SendPhoto (chatid, pngpath).Result;
+			if (Directory.GetFiles (path).Any (x => x.EndsWith (".png"))) { //yay successful compilation
+				foreach (var file in Directory.GetFiles(path)) {
+					Api.SendPhoto (chatid, file);
+				}
+			}
 
-			//clean directory
-			var matchingfiles = Directory.EnumerateFiles (Directory.GetCurrentDirectory ()).Where (x => x.Contains (filename));
-			foreach (var f in matchingfiles) {
+			//delete files
+			foreach (var f in Directory.GetFiles(path)) {
 				File.Delete (f);
 			}
+			Directory.Delete (path);
 
 			return;
 		}

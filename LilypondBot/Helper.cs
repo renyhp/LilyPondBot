@@ -12,6 +12,15 @@ namespace LilypondBot
 	{
 		public static readonly string TokenPath = Path.Combine (Directory.GetCurrentDirectory (), @"../../token.txt");
 		public static readonly long renyhp = 133748469;
+		public static readonly string PaperSettings = 
+			@"\paper{
+    indent=0\mm
+    line-width=120\mm
+    oddFooterMarkup=##f
+    oddHeaderMarkup=##f
+    bookTitleMarkup = ##f
+    scoreTitleMarkup = ##f
+}";
 	}
 
 	public static class Api
