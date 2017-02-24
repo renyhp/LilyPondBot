@@ -3,6 +3,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Threading;
 using File = System.IO.File;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -28,14 +29,13 @@ namespace LilypondBot
 
 			//first of all, where do we store the file	
 			string filename = GenerateFilename (msg.From.Username);
-			Directory.CreateDirectory (Path.Combine (Directory.GetCurrentDirectory, filename)); //create new directory
-			string path = Path.Combine (Directory.GetCurrentDirectory (), filename); //path to the new directory
+			string path = Directory.GetCurrentDirectory ();
 			string srcfile = filename + ".ly";
 			string srcpath = Path.Combine (path, srcfile);
 			string text = msg.Text;
 
 			//set paper settings
-			text = @"" + text;
+			text = Settings.PaperSettings + text;
 
 			//get rid of missing version warning
 			if (!text.Contains (@"\version "))
@@ -44,11 +44,10 @@ namespace LilypondBot
 			File.WriteAllText (srcpath, text);
 
 			//ok, compile
-			var process = Lilypond ("-dbackend=eps -dresolution=600 --png --loglevel=WARN " + srcpath);
+			var process = Lilypond ($"-dbackend=eps -dresolution=600 --png --loglevel=WARN {srcpath}");
 
 			string error = "";
-			string output = Run (process, out error) ?? "";
-
+			string output = Run (process, out error);
 			NormalizeOutput (error, srcpath, srcfile);
 
 			if (error != "")
@@ -57,20 +56,17 @@ namespace LilypondBot
 			if (output != "") { //gonna want to know
 				Api.Send (Settings.renyhp, "OUTPUT\n\n" + output);
 				Api.Send (Settings.renyhp, "ERROR\n\n" + error);
-				Api.SendFile (Settings.renyhp, srcpath).Result;
+				Api.SendFile (Settings.renyhp, srcpath);
 			}
 
-			if (Directory.GetFiles (path).Any (x => x.EndsWith (".png"))) { //yay successful compilation
-				foreach (var file in Directory.GetFiles(path)) {
+			var result = Directory.GetFiles (path).Where (x => x.EndsWith (".png"));
+			if (result.Any ())  //yay successful compilation
+				foreach (var file in result)
 					Api.SendPhoto (chatid, file);
-				}
-			}
 
-			//delete files
-			foreach (var f in Directory.GetFiles(path)) {
+			//clean up
+			foreach (var f in Directory.GetFiles(path).Where(x => x.Contains(filename)))
 				File.Delete (f);
-			}
-			Directory.Delete (path);
 
 			return;
 		}
@@ -88,7 +84,7 @@ namespace LilypondBot
 			var exists = false;
 			do {
 				filename = DateTime.UtcNow.ToString ("yyMMddHHmmssff-") + (username ?? counter.ToString ());
-				exists = Directory.EnumerateFiles (Directory.GetCurrentDirectory ()).Where (x => x.Contains (filename)).Any ();
+				exists = Directory.GetFiles (Directory.GetCurrentDirectory ()).Where (x => x.Contains (filename)).Any ();
 				counter++;
 			} while (exists);
 			return filename;
@@ -119,9 +115,7 @@ namespace LilypondBot
 		{
 			p.Start ();
 			string output = "";
-			if (p.StartInfo.RedirectStandardOutput == false)
-				output = null;
-			else {
+			if (p.StartInfo.RedirectStandardOutput == true) {
 				while (!p.StandardOutput.EndOfStream) {
 					output += p.StandardOutput.ReadLine () + Environment.NewLine;
 				}
@@ -135,11 +129,8 @@ namespace LilypondBot
 		private static string Run (Process p, out string error)
 		{
 			string output = Run (p);
-
 			error = "";
-			if (p.StartInfo.RedirectStandardError == false)
-				error = null;
-			else {
+			if (p.StartInfo.RedirectStandardError == true) {
 				while (!p.StandardError.EndOfStream) {
 					error += p.StandardError.ReadLine () + Environment.NewLine;
 				}

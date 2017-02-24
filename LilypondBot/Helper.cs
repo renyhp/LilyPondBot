@@ -5,6 +5,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using File = System.IO.File;
 
 namespace LilypondBot
 {
@@ -45,6 +46,26 @@ namespace LilypondBot
 		public static string FormatHTML (this string str)
 		{
 			return str.Replace (">", "&gt;").Replace ("<", "&lt;").Replace ("&", "&amp;");
+		}
+	}
+
+	public static class Helpers
+	{
+		public static void DeleteDirectory (string target_dir)
+		{
+			string[] files = Directory.GetFiles (target_dir);
+			string[] dirs = Directory.GetDirectories (target_dir);
+
+			foreach (string file in files) {
+				File.SetAttributes (file, FileAttributes.Normal);
+				File.Delete (file);
+			}
+
+			foreach (string dir in dirs) {
+				DeleteDirectory (dir);
+			}
+
+			Directory.Delete (target_dir, false);
 		}
 	}
 }
