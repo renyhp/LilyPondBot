@@ -18,7 +18,8 @@ namespace LilypondBot
 		public static void HandleUpdate (Update u)
 		{
 			var msg = u.Message;
-			if (msg == null || msg.Date < Program.StartTime.AddSeconds (-5) || msg.Chat.Type != ChatType.Private)
+			if (msg == null || msg.Date < Program.StartTime.AddSeconds (-5)
+			    || msg.Chat.Type != ChatType.Private) //TODO: Make a command to enable it also outside private chat
 				return;
 			
 			var chatid = msg.Chat.Id;
@@ -29,6 +30,7 @@ namespace LilypondBot
 				return;
 			}
 
+			//TODO: Figure out how to make multiple message input possible
 			CompileAndSend (msg.Text, msg.From.Username, chatid);
 
 			return;
