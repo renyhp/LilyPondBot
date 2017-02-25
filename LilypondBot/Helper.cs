@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Linq;
 using System.IO;
 using System.Threading.Tasks;
 using Telegram.Bot;
@@ -51,21 +54,25 @@ namespace LilypondBot
 
 	public static class Helpers
 	{
-		public static void DeleteDirectory (string target_dir)
+
+
+
+		public static string GenerateFilename (string username)
 		{
-			string[] files = Directory.GetFiles (target_dir);
-			string[] dirs = Directory.GetDirectories (target_dir);
+			int counter = 0;
+			string filename;
+			var exists = false;
+			do {
+				filename = DateTime.UtcNow.ToString ("yyMMddHHmmssff-") + (username ?? counter.ToString ());
+				exists = Directory.GetFiles (Directory.GetCurrentDirectory ()).Where (x => x.Contains (filename)).Any ();
+				counter++;
+			} while (exists);
+			return filename;
+		}
 
-			foreach (string file in files) {
-				File.SetAttributes (file, FileAttributes.Normal);
-				File.Delete (file);
-			}
-
-			foreach (string dir in dirs) {
-				DeleteDirectory (dir);
-			}
-
-			Directory.Delete (target_dir, false);
+		public static string NormalizeOutput (this string output, string path, string filename)
+		{
+			return output.Replace (path + ":", "").Replace (path, filename).Replace (Environment.NewLine + Environment.NewLine, Environment.NewLine);
 		}
 	}
 }
