@@ -32,6 +32,7 @@ namespace LilypondBot
 			}
 			if (cmd == "help") {
 				Api.Send (chatid, "Hello! Send me some lilypond code, I will compile it for you and send you a picture with the sheet music.\nFor now I can compile only little pieces of music, so the output of a big sheet music could be bad.");
+				return;
 			}
 
 			Lilypond.CompileAndSend (msg.Text, msg.From.Username, chatid);
