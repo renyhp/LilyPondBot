@@ -18,6 +18,7 @@ namespace LilypondBot
 	{
 		public static TelegramBotClient Bot;
 		public static User Me;
+		public static DateTime StartTime = DateTime.UtcNow;
 
 		public static void Main (string[] args)
 		{

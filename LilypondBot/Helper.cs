@@ -17,10 +17,10 @@ namespace LilypondBot
 			@"\paper{
     indent=0\mm
     line-width=120\mm
-    oddFooterMarkup=##f
-    oddHeaderMarkup=##f
-    bookTitleMarkup = ##f
-    scoreTitleMarkup = ##f
+    oddHeaderMarkup = ##f
+  	evenHeaderMarkup = ##f
+  	oddFooterMarkup = ##f
+  	evenFooterMarkup = ##f
 }";
 	}
 

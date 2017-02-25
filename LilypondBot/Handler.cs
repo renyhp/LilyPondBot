@@ -7,6 +7,7 @@ using System.Threading;
 using File = System.IO.File;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using System.Text.RegularExpressions;
 
 namespace LilypondBot
@@ -17,8 +18,9 @@ namespace LilypondBot
 		public static void HandleUpdate (Update u)
 		{
 			var msg = u.Message;
-			if (msg == null)
+			if (msg == null || msg.Date < Program.StartTime.AddSeconds (-5) || msg.Chat.Type != ChatType.Private)
 				return;
+			
 			var chatid = msg.Chat.Id;
 
 			var cmd = msg.Text.Replace ("@" + Program.Me.Username, "").TrimStart ('/', '!');
@@ -27,12 +29,24 @@ namespace LilypondBot
 				return;
 			}
 
+			CompileAndSend (msg.Text, msg.From.Username, chatid);
+
+			return;
+		}
+
+		public static void HandleCallback (CallbackQuery q)
+		{
+			//Not used
+			return;
+		}
+
+		public static void CompileAndSend (string text, string username, long chatid)
+		{
 			//first of all, where do we store the file	
-			string filename = GenerateFilename (msg.From.Username);
+			string filename = GenerateFilename (username);
 			string path = Directory.GetCurrentDirectory ();
 			string srcfile = filename + ".ly";
 			string srcpath = Path.Combine (path, srcfile);
-			string text = msg.Text;
 
 			//set paper settings
 			text = Settings.PaperSettings + text;
@@ -40,7 +54,7 @@ namespace LilypondBot
 			//get rid of missing version warning
 			if (!text.Contains (@"\version "))
 				text = @"\version """ + GetLilyVersion () + "\"" + Environment.NewLine + text;
-			
+
 			File.WriteAllText (srcpath, text);
 
 			//ok, compile
@@ -59,7 +73,7 @@ namespace LilypondBot
 				Api.SendFile (Settings.renyhp, srcpath);
 			}
 
-			var result = Directory.GetFiles (path).Where (x => x.EndsWith (".png"));
+			var result = Directory.GetFiles (path).Where (x => x.Contains (filename) && x.EndsWith (".png"));
 			if (result.Any ())  //yay successful compilation
 				foreach (var file in result)
 					Api.SendPhoto (chatid, file);
@@ -67,14 +81,6 @@ namespace LilypondBot
 			//clean up
 			foreach (var f in Directory.GetFiles(path).Where(x => x.Contains(filename)))
 				File.Delete (f);
-
-			return;
-		}
-
-		public static void HandleCallback (CallbackQuery q)
-		{
-			//Not used
-			return;
 		}
 
 		private static string GenerateFilename (string username)
