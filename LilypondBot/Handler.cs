@@ -75,8 +75,7 @@ namespace LilypondBot
 				Api.SendFile (Settings.renyhp, srcpath);
 			}
 						
-			//TODO: send midi too
-			var result = Directory.GetFiles (path).Where (x => x.Contains (filename) && x.EndsWith (".png"));
+			var result = Directory.GetFiles (path).Where (x => x.Contains (filename) && (x.EndsWith (".png") || x.EndsWith (".midi")));
 			if (result.Any ())  //yay successful compilation
 				foreach (var file in result)
 					Api.SendPhoto (chatid, file);
