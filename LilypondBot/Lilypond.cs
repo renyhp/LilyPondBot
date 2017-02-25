@@ -34,7 +34,7 @@ namespace LilypondBot
 			File.WriteAllText (srcpath, text);
 
 			//ok, compile
-			var process = LilypondProcess ($"-dbackend=eps -dresolution=600 --png --loglevel=WARN {srcpath}");
+			var process = LilypondProcess ($"-dbackend=eps -dresolution=300 --png --loglevel=WARN {srcpath}");
 
 			string error = "";
 			string output = Run (process, out error);
@@ -55,7 +55,11 @@ namespace LilypondBot
 			if (imgresult.Any ())  //yay successful compilation
 				foreach (var file in imgresult) {
 					file.AddPadding (30, 30, 30, 30);
-					Api.SendPhoto (chatid, file);
+					try {
+						Api.SendPhoto (chatid, file).Wait ();
+					} catch {
+						Api.SendFile (chatid, file).Wait ();
+					}
 				}
 
 			//send midis

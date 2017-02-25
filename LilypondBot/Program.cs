@@ -40,13 +40,21 @@ namespace LilypondBot
 
 		static void Bot_OnUpdate (object sender, Telegram.Bot.Args.UpdateEventArgs e)
 		{
-			new Task (() => Handler.HandleUpdate (e.Update)).Start ();
+			try {
+				new Task (() => Handler.HandleUpdate (e.Update)).Start ();
+			} catch (Exception ex) {
+				Api.Send (Settings.renyhp, ex.GetType ().ToString () + " " + ex.Source + Environment.NewLine + ex.Message + Environment.NewLine + ex.StackTrace);
+			}
 			return;
 		}
 
 		static void Bot_OnCallbackQuery (object sender, Telegram.Bot.Args.CallbackQueryEventArgs e)
 		{
-			new Task (() => Handler.HandleCallback (e.CallbackQuery)).Start ();
+			try {
+				new Task (() => Handler.HandleCallback (e.CallbackQuery)).Start ();
+			} catch (Exception ex) {
+				Api.Send (Settings.renyhp, ex.GetType ().ToString () + " " + ex.Source + Environment.NewLine + ex.Message + Environment.NewLine + ex.StackTrace);
+			}
 			return;
 		}
 
