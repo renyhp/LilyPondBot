@@ -31,7 +31,7 @@ namespace LilypondBot
 	{
 		public static Task<Message> Send (long chatId, string text, int replyid = 0, IReplyMarkup replyMarkup = null)
 		{
-			return Program.Bot.SendTextMessageAsync (chatId, text.FormatHTML (), true, false, replyid, replyMarkup, ParseMode.Html);
+			return Program.Bot.SendTextMessageAsync (chatId, text, true, false, replyid, replyMarkup, ParseMode.Html);
 		}
 
 		public static Task<Message> SendFile (long chatid, string path)

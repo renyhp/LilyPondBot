@@ -41,11 +41,11 @@ namespace LilypondBot
 			error = error.NormalizeOutput (srcpath, srcfile);
 
 			if (error != "")
-				Api.Send (chatid, error);
+				Api.Send (chatid, error.FormatHTML ());
 
 			if (output != "") { //gonna want to know
-				Api.Send (Settings.renyhp, "OUTPUT\n\n" + output);
-				Api.Send (Settings.renyhp, "ERROR\n\n" + error);
+				Api.Send (Settings.renyhp, "OUTPUT\n\n" + output.FormatHTML ());
+				Api.Send (Settings.renyhp, "ERROR\n\n" + error.FormatHTML ());
 				Api.SendFile (Settings.renyhp, srcpath);
 			}
 
