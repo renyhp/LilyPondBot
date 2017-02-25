@@ -74,7 +74,8 @@ namespace LilypondBot
 				Api.Send (Settings.renyhp, "ERROR\n\n" + error);
 				Api.SendFile (Settings.renyhp, srcpath);
 			}
-
+						
+			//TODO: send midi too
 			var result = Directory.GetFiles (path).Where (x => x.Contains (filename) && x.EndsWith (".png"));
 			if (result.Any ())  //yay successful compilation
 				foreach (var file in result)
