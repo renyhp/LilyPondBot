@@ -14,10 +14,9 @@ namespace LilypondBot
 {
 	public static class Settings
 	{
-		#if RELEASE
+		#if !DEBUG
 		public static readonly string TokenPath = Path.Combine (Directory.GetCurrentDirectory (), @"token.txt");
-		#endif
-		#if DEBUG
+		#else
 		public static readonly string TokenPath = Path.Combine (Directory.GetCurrentDirectory (), @"../../debugtoken.txt");
 		#endif
 		public static readonly long renyhp = 133748469;

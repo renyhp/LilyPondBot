@@ -43,7 +43,7 @@ namespace LilypondBot
 			try {
 				new Task (() => Handler.HandleUpdate (e.Update)).Start ();
 			} catch (Exception ex) {
-				Api.Send (Settings.renyhp, ex.GetType ().ToString () + " " + ex.Source + Environment.NewLine + ex.Message + Environment.NewLine + ex.StackTrace);
+				LogError (ex);
 			}
 			return;
 		}
@@ -53,7 +53,7 @@ namespace LilypondBot
 			try {
 				new Task (() => Handler.HandleCallback (e.CallbackQuery)).Start ();
 			} catch (Exception ex) {
-				Api.Send (Settings.renyhp, ex.GetType ().ToString () + " " + ex.Source + Environment.NewLine + ex.Message + Environment.NewLine + ex.StackTrace);
+				LogError (ex);
 			}
 			return;
 		}
