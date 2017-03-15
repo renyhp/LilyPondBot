@@ -14,7 +14,12 @@ namespace LilypondBot
 {
 	public static class Settings
 	{
-		public static readonly string TokenPath = Path.Combine (Directory.GetCurrentDirectory (), @"../../token.txt");
+		#if RELEASE
+		public static readonly string TokenPath = Path.Combine (Directory.GetCurrentDirectory (), @"token.txt");
+		#endif
+		#if DEBUG
+		public static readonly string TokenPath = Path.Combine (Directory.GetCurrentDirectory (), @"../../debugtoken.txt");
+		#endif
 		public static readonly long renyhp = 133748469;
 		public static readonly string PaperSettings = 
 			@"\paper{
@@ -46,6 +51,11 @@ namespace LilypondBot
 			return Program.Bot.SendPhotoAsync (chatid, new FileToSend (filename, new FileStream (path, FileMode.Open)));
 		}
 
+		public static Task<Message> Edit (long chatId, int msgId, string text, IReplyMarkup replyMarkup = null)
+		{
+			return Program.Bot.EditMessageTextAsync (chatId, msgId, text, ParseMode.Html, true, replyMarkup);
+		}
+
 		public static string FormatHTML (this string str)
 		{
 			return str.Replace (">", "&gt;").Replace ("<", "&lt;").Replace ("&", "&amp;");
@@ -54,9 +64,6 @@ namespace LilypondBot
 
 	public static class Helpers
 	{
-
-
-
 		public static string GenerateFilename (string username)
 		{
 			int counter = 0;

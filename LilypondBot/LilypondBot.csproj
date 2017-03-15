@@ -55,5 +55,6 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="token.txt" />
+    <None Include="debugtoken.txt" />
   </ItemGroup>
 </Project>
