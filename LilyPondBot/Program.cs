@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 
 using TelegramFile = Telegram.Bot.Types.File;
 using File = System.IO.File;
@@ -19,6 +20,8 @@ namespace LilyPondBot
 		public static TelegramBotClient Bot;
 		public static User Me;
 		public static DateTime StartTime = DateTime.UtcNow;
+		public static int MessagesReceived = 0;
+		public static DateTime LastMessageTime = DateTime.UtcNow;
 
 		public static void Main(string[] args)
 		{
@@ -44,6 +47,14 @@ namespace LilyPondBot
 				new Task(() => Handler.HandleUpdate(e.Update)).Start();
 			} catch (Exception ex) {
 				LogError(ex);
+			}
+			if (e.Update.Type == UpdateType.MessageUpdate && (e.Update.Message?.From.Id ?? Settings.renyhp) != Settings.renyhp) {
+				MessagesReceived++;
+				if (LastMessageTime.CompareTo(DateTime.UtcNow.Date.AddHours(8)) < 0 && DateTime.UtcNow.Hour >= 8) {
+					File.AppendAllText(Settings.LogPath, DateTime.UtcNow.ToString("s") + " --- Messages received: " + MessagesReceived.ToString() + Environment.NewLine);
+					MessagesReceived = 0;
+				}
+				LastMessageTime = DateTime.UtcNow;
 			}
 			return;
 		}
@@ -78,13 +89,18 @@ namespace LilyPondBot
 		{
 			var msg = "";
 			do {
-				msg = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss.fff", CultureInfo.InvariantCulture) + " - " +
-				e.Message + Environment.NewLine + e.StackTrace + Environment.NewLine + Environment.NewLine;
-				Bot.SendTextMessageAsync(Settings.renyhp, msg);
+				msg = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss.fff", CultureInfo.InvariantCulture) + " - " + e.GetType().ToString() + " " + e.Source +
+				Environment.NewLine + e.Message +
+				Environment.NewLine + e.StackTrace + Environment.NewLine + Environment.NewLine;
+				File.AppendAllText(Settings.LogPath, msg);
+				try {
+					Bot.SendTextMessageAsync(Settings.renyhp, msg);
+				} catch {
+					//ignored
+				}
 				e = e.InnerException;
 			} while (e == null);
 			return;
 		}
-
 	}
 }

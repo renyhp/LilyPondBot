@@ -15,11 +15,13 @@ namespace LilyPondBot
 	public static class Settings
 	{
 		#if !DEBUG
-		public static readonly string TokenPath = Path.Combine (Directory.GetCurrentDirectory (), @"token.txt");
+		public static readonly string TokenPath = Path.Combine(Directory.GetCurrentDirectory(), @"token.txt");
 		#endif
 		#if DEBUG
 		public static readonly string TokenPath = Path.Combine(Directory.GetCurrentDirectory(), @"../../debugtoken.txt");
 		#endif
+		public static readonly string LogPath = Path.Combine(Directory.GetCurrentDirectory(), "logs.txt");
+		public static readonly string LilyPondPath = @"/usr/bin/lilypond";
 		public static readonly long renyhp = 133748469;
 		public static readonly string PaperSettings = 
 			@"\paper{

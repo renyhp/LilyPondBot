@@ -78,7 +78,7 @@ namespace LilyPondBot
 		{
 			return new Process() { 
 				StartInfo = new ProcessStartInfo() {
-					FileName = "/usr/bin/lilypond",
+					FileName = Settings.LilyPondPath,
 					Arguments = args,
 					UseShellExecute = false,
 					RedirectStandardOutput = true,
