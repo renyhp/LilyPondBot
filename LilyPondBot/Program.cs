@@ -21,6 +21,8 @@ namespace LilyPondBot
 		public static User Me;
 		public static DateTime StartTime = DateTime.UtcNow;
 		public static int MessagesReceived = 0;
+		public static int CommandsProcessed = 0;
+		public static int SuccesfulCompilations = 0;
 		public static DateTime LastMessageTime = DateTime.UtcNow;
 
 		public static void Main(string[] args)
@@ -43,15 +45,24 @@ namespace LilyPondBot
 
 		static void Bot_OnUpdate(object sender, Telegram.Bot.Args.UpdateEventArgs e)
 		{
-			try {
-				new Task(() => Handler.HandleUpdate(e.Update)).Start();
-			} catch (Exception ex) {
-				LogError(ex);
+			new Task(() => {
+				try {
+					Handler.HandleUpdate(e.Update);
+				} catch (Exception ex) {
+					LogError(ex);
+				}
 			}
+			).Start();
 			if (e.Update.Type == UpdateType.MessageUpdate && (e.Update.Message?.From.Id ?? Settings.renyhp) != Settings.renyhp) {
 				MessagesReceived++;
-				if (LastMessageTime.CompareTo(DateTime.UtcNow.Date.AddHours(8)) < 0 && DateTime.UtcNow.Hour >= 8) {
-					File.AppendAllText(Settings.LogPath, DateTime.UtcNow.ToString("s") + " --- Messages received: " + MessagesReceived.ToString() + Environment.NewLine);
+				if (LastMessageTime.CompareTo(DateTime.UtcNow.Date.AddHours(Settings.DailyLogUtcHour)) < 0 && DateTime.UtcNow.Hour >= Settings.DailyLogUtcHour) {
+					File.AppendAllText(
+						Settings.LogPath, DateTime.UtcNow.ToString("s") + " DAILY LOG ----- " +
+					Environment.NewLine + "    Messages received: " + MessagesReceived.ToString() +
+					Environment.NewLine + "    Commands processed: " + CommandsProcessed.ToString() +
+					Environment.NewLine + "    Successful compilations: " + SuccesfulCompilations.ToString() +
+					Environment.NewLine + "-----" + Environment.NewLine + Environment.NewLine
+					);
 					MessagesReceived = 0;
 				}
 				LastMessageTime = DateTime.UtcNow;
@@ -61,11 +72,14 @@ namespace LilyPondBot
 
 		static void Bot_OnCallbackQuery(object sender, Telegram.Bot.Args.CallbackQueryEventArgs e)
 		{
-			try {
-				new Task(() => Handler.HandleCallback(e.CallbackQuery)).Start();
-			} catch (Exception ex) {
-				LogError(ex);
+			new Task(() => {
+				try {
+					Handler.HandleCallback(e.CallbackQuery);
+				} catch (Exception ex) {
+					LogError(ex);
+				}
 			}
+			).Start();
 			return;
 		}
 

@@ -25,6 +25,7 @@ namespace LilyPondBot
 			var chatid = msg.Chat.Id;
 			
 			if (msg.Text.StartsWith("/") || msg.Text.StartsWith("!")) {
+				Program.CommandsProcessed++;
 				var text = msg.Text.Replace("@" + Program.Me.Username, "").TrimStart('/', '!');
 				var cmd = text.Contains(' ') ? text.Substring(0, text.IndexOf(' ')) : text;
 				string message;
@@ -75,9 +76,12 @@ namespace LilyPondBot
 					case "compile":
 					//send a menu: Set file format. Set page size / adjust padding. Compile. 
 						break;
+					default:
+						Program.CommandsProcessed--;
+						break;
 				}
 			} else if (msg.Chat.Type == ChatType.Private) {
-				LilyPond.FastCompile(msg.Text, msg.From.Username, chatid);
+				LilyPond.FastCompile(msg.Text, msg.From.Username, chatid, msg.From.Id != Settings.renyhp);
 			}
 
 			return;

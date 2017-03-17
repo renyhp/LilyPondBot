@@ -16,7 +16,7 @@ namespace LilyPondBot
 {
 	public static class LilyPond
 	{
-		public static void FastCompile(string text, string username, long chatid)
+		public static void FastCompile(string text, string username, long chatid, bool logonsuccess)
 		{
 			//first of all, where do we store the file	
 			string filename = Helpers.GenerateFilename(username);
@@ -67,6 +67,10 @@ namespace LilyPondBot
 			if (midiresult.Any())
 				foreach (var file in midiresult)
 					Api.SendFile(chatid, file);
+
+			if (imgresult.Union(midiresult).Any() && logonsuccess)
+				Program.SuccesfulCompilations++;
+				
 
 			//clean up
 			foreach (var f in Directory.GetFiles(path).Where(x => x.Contains(filename)))
