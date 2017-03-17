@@ -49,29 +49,35 @@ namespace LilyPondBot
 
 		static void Bot_OnUpdate(object sender, Telegram.Bot.Args.UpdateEventArgs e)
 		{
-			var date = e.Update.Message?.Date ?? e.Update.CallbackQuery?.Message?.Date ?? DateTime.MaxValue;
-			if (date < Program.StartTime.AddSeconds(-5))
-				return;
-			
-			new Task(() => {
-				try {
-					switch (e.Update.Type) {
-						case UpdateType.MessageUpdate:
-							Handler.HandleMessage(e.Update.Message);
-							break;
-						case UpdateType.CallbackQueryUpdate:
-							Handler.HandleCallback(e.Update.CallbackQuery);
-							break;
+			bool log = false;
+			if (e.Update.Message != null) {
+				if (e.Update.Message?.Date == null || e.Update.Message.Date < Program.StartTime.AddSeconds(-5))
+					return;
+				new Task(() => {
+					try {
+						Handler.HandleMessage(e.Update.Message);
+					} catch (Exception ex) {
+						LogError(ex);
 					}
-				} catch (Exception ex) {
-					LogError(ex);
-				}
+				}).Start();
+				if (e.Update.Message.From.Id != Settings.renyhp)
+					log = true;
 			}
-			).Start();
+			if (e.Update.CallbackQuery != null) {
+				if (e.Update.CallbackQuery?.Message?.Date == null || e.Update.CallbackQuery.Message.Date < Program.StartTime.AddSeconds(-5))
+					return;
+				new Task(() => {
+					try {
+						Handler.HandleCallback(e.Update.CallbackQuery);
+					} catch (Exception ex) {
+						LogError(ex);
+					}
+				}).Start();
+				if (e.Update.CallbackQuery.From.Id != Settings.renyhp)
+					log = true;
+			}
 
-			//log other people's activity
-			var id = e.Update.Message?.From.Id ?? e.Update.CallbackQuery?.From.Id ?? Settings.renyhp;
-			if (id != Settings.renyhp) {
+			if (log) {
 				MessagesReceived++;
 				UpdateMonitor = true;
 			}
@@ -98,7 +104,7 @@ namespace LilyPondBot
 		{
 			var msg = "";
 			do {
-				msg = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss.fff", CultureInfo.InvariantCulture) + " - " + e.GetType().ToString() + " " + e.Source +
+				msg = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + " - " + e.GetType().ToString() + e.Source +
 				Environment.NewLine + e.Message +
 				Environment.NewLine + e.StackTrace + Environment.NewLine + Environment.NewLine;
 				File.AppendAllText(Settings.LogPath, msg);
@@ -108,7 +114,7 @@ namespace LilyPondBot
 					//ignored
 				}
 				e = e.InnerException;
-			} while (e == null);
+			} while (e != null);
 			return;
 		}
 
@@ -119,9 +125,10 @@ namespace LilyPondBot
 				if (UpdateMonitor) {
 					//update the monitor
 					Console.SetCursorPosition(0, 0);
+					Console.Clear();
 					Console.WriteLine(
 						version + Environment.NewLine +
-						"Last message received: " + DateTime.UtcNow.ToString("G") + " UTC" + Environment.NewLine +
+						"Last message received: " + DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss") + " UTC" + Environment.NewLine +
 						"Messages received: " + MessagesReceived.ToString() + Environment.NewLine +
 						"Commands processed: " + CommandsProcessed.ToString() + Environment.NewLine +
 						"Successful compilations: " + SuccesfulCompilations.ToString()
@@ -130,7 +137,7 @@ namespace LilyPondBot
 					//daily log
 					if (LastMessageTime.CompareTo(DateTime.UtcNow.Date.AddHours(Settings.DailyLogUtcHour)) < 0 && DateTime.UtcNow.Hour >= Settings.DailyLogUtcHour) {
 						File.AppendAllText(
-							Settings.LogPath, DateTime.UtcNow.ToString("s") + " DAILY LOG ----- " +
+							Settings.LogPath, DateTime.UtcNow.ToString("yyyy/MM/dd HH:mm:ss") + " DAILY LOG ----- " +
 						Environment.NewLine + "    Messages received: " + MessagesReceived.ToString() +
 						Environment.NewLine + "    Commands processed: " + CommandsProcessed.ToString() +
 						Environment.NewLine + "    Successful compilations: " + SuccesfulCompilations.ToString() +
@@ -145,6 +152,8 @@ namespace LilyPondBot
 					LastMessageTime = DateTime.UtcNow;
 					UpdateMonitor = false;
 				}
+				//wait before redoing this
+				Task.Delay(60000).Wait();
 			}
 		}
 	}

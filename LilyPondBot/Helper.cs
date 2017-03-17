@@ -20,10 +20,10 @@ namespace LilyPondBot
 		#if DEBUG
 		public static readonly string TokenPath = Path.Combine(Directory.GetCurrentDirectory(), @"../../debugtoken.txt");
 		#endif
+		public static readonly long renyhp = 133748469;
 		public static readonly string LogPath = Path.Combine(Directory.GetCurrentDirectory(), "logs.txt");
 		public static readonly string LilyPondPath = @"/usr/bin/lilypond";
 		public static readonly int DailyLogUtcHour = 3;
-		public static readonly long renyhp = 133748469;
 		public static readonly string PaperSettings = 
 			@"\paper{
     indent=0\mm
