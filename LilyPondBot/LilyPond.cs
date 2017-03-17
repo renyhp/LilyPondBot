@@ -29,7 +29,7 @@ namespace LilyPondBot
 
 			//get rid of missing version warning
 			if (!text.Contains(@"\version "))
-				text = @"\version """ + GetLilyVersion() + "\"" + Environment.NewLine + text;
+				text = @"\version """ + Program.LilyVersion + "\"" + Environment.NewLine + text;
 
 			File.WriteAllText(srcpath, text);
 
@@ -68,8 +68,10 @@ namespace LilyPondBot
 				foreach (var file in midiresult)
 					Api.SendFile(chatid, file);
 
-			if (imgresult.Union(midiresult).Any() && logonsuccess)
+			if (imgresult.Union(midiresult).Any() && logonsuccess) {
 				Program.SuccesfulCompilations++;
+				Program.UpdateMonitor = true;
+			}
 				
 
 			//clean up
