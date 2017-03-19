@@ -27,6 +27,7 @@ namespace LilyPondBot
 		public static int SuccesfulCompilations = 0;
 		public static string Monitor = "";
 		public static DateTime LatestMessageTime = DateTime.UtcNow;
+		public static DateTime PreviousMessageTime = DateTime.UtcNow;
 		public static readonly string BotVersion = "LilyPondBot v" + FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
 		public static readonly string LilyVersion = LilyPond.GetLilyVersion();
 		public static bool UpdateMonitor = true;
@@ -82,6 +83,7 @@ namespace LilyPondBot
 
 			if (log) {
 				MessagesReceived++;
+				LatestMessageTime = DateTime.UtcNow;
 				UpdateMonitor = true;
 			}
 			return;
@@ -128,7 +130,7 @@ namespace LilyPondBot
 				if (UpdateMonitor) {
 					//update the monitor
 					Monitor = "Start time: " + StartTime.ToString("dd/MM/yyyy HH:mm:ss") + " UTC" + Environment.NewLine +
-					"Last message received: " + DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss") + " UTC" + Environment.NewLine +
+					"Last message received: " + LatestMessageTime.ToString("dd/MM/yyyy HH:mm:ss") + " UTC" + Environment.NewLine +
 					"Messages received: " + MessagesReceived.ToString() + Environment.NewLine +
 					"Commands processed: " + CommandsProcessed.ToString() + Environment.NewLine +
 					"Successful compilations: " + SuccesfulCompilations.ToString();
@@ -137,7 +139,7 @@ namespace LilyPondBot
 					Console.WriteLine(version + Environment.NewLine + Monitor);
 
 					//daily log
-					if (LatestMessageTime.CompareTo(DateTime.UtcNow.Date.AddHours(Settings.DailyLogUtcHour)) < 0 && DateTime.UtcNow.Hour >= Settings.DailyLogUtcHour) {
+					if (PreviousMessageTime.CompareTo(DateTime.UtcNow.Date.AddHours(Settings.DailyLogUtcHour)) < 0 && LatestMessageTime.Hour >= Settings.DailyLogUtcHour) {
 						File.AppendAllText(
 							Settings.LogPath, DateTime.UtcNow.ToString("yyyy/MM/dd HH:mm:ss") + " DAILY LOG ----- " +
 						Environment.NewLine + Monitor + Environment.NewLine + "-----" + Environment.NewLine + Environment.NewLine
@@ -148,7 +150,7 @@ namespace LilyPondBot
 						SuccesfulCompilations = 0;
 					}
 
-					LatestMessageTime = DateTime.UtcNow;
+					PreviousMessageTime = LatestMessageTime;
 					UpdateMonitor = false;
 				}
 				//wait before redoing this
