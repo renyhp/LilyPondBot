@@ -107,7 +107,7 @@ namespace LilyPondBot
 		{
 			var msg = "";
 			do {
-				msg = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + " - " + e.GetType().ToString() + e.Source +
+				msg = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + " - " + e.GetType().ToString() + " " + e.Source +
 				Environment.NewLine + e.Message +
 				Environment.NewLine + e.StackTrace + Environment.NewLine + Environment.NewLine;
 				File.AppendAllText(Settings.LogPath, msg);

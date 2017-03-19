@@ -20,6 +20,10 @@ namespace LilyPondBot
 		public static void HandleMessage(Message msg)
 		{
 			var chatid = msg.Chat.Id;
+
+			if (msg.Text == null)
+				//for v2.0: if it's a document, try to compile it!
+				return;
 			
 			if (msg.Text.StartsWith("/") || msg.Text.StartsWith("!")) {
 				if (msg.From.Id != Settings.renyhp) {
