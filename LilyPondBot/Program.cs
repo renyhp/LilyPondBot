@@ -17,13 +17,16 @@ namespace LilyPondBot
 	
 	static class Program
 	{
+		//TELEGRAM
 		public static TelegramBotClient Bot;
 		public static User Me;
+		//MONITOR
 		public static DateTime StartTime = DateTime.UtcNow;
 		public static int MessagesReceived = 0;
 		public static int CommandsProcessed = 0;
 		public static int SuccesfulCompilations = 0;
-		public static DateTime LastMessageTime = DateTime.UtcNow;
+		public static string Monitor = "";
+		public static DateTime LatestMessageTime = DateTime.UtcNow;
 		public static readonly string BotVersion = "LilyPondBot v" + FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
 		public static readonly string LilyVersion = LilyPond.GetLilyVersion();
 		public static bool UpdateMonitor = true;
@@ -124,24 +127,20 @@ namespace LilyPondBot
 			while (true) {
 				if (UpdateMonitor) {
 					//update the monitor
+					Monitor = "Start time: " + StartTime.ToString("dd/MM/yyyy HH:mm:ss") + " UTC" + Environment.NewLine +
+					"Last message received: " + DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss") + " UTC" + Environment.NewLine +
+					"Messages received: " + MessagesReceived.ToString() + Environment.NewLine +
+					"Commands processed: " + CommandsProcessed.ToString() + Environment.NewLine +
+					"Successful compilations: " + SuccesfulCompilations.ToString();
 					Console.SetCursorPosition(0, 0);
 					Console.Clear();
-					Console.WriteLine(
-						version + Environment.NewLine +
-						"Last message received: " + DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss") + " UTC" + Environment.NewLine +
-						"Messages received: " + MessagesReceived.ToString() + Environment.NewLine +
-						"Commands processed: " + CommandsProcessed.ToString() + Environment.NewLine +
-						"Successful compilations: " + SuccesfulCompilations.ToString()
-					);
+					Console.WriteLine(version + Environment.NewLine + Monitor);
 
 					//daily log
-					if (LastMessageTime.CompareTo(DateTime.UtcNow.Date.AddHours(Settings.DailyLogUtcHour)) < 0 && DateTime.UtcNow.Hour >= Settings.DailyLogUtcHour) {
+					if (LatestMessageTime.CompareTo(DateTime.UtcNow.Date.AddHours(Settings.DailyLogUtcHour)) < 0 && DateTime.UtcNow.Hour >= Settings.DailyLogUtcHour) {
 						File.AppendAllText(
 							Settings.LogPath, DateTime.UtcNow.ToString("yyyy/MM/dd HH:mm:ss") + " DAILY LOG ----- " +
-						Environment.NewLine + "    Messages received: " + MessagesReceived.ToString() +
-						Environment.NewLine + "    Commands processed: " + CommandsProcessed.ToString() +
-						Environment.NewLine + "    Successful compilations: " + SuccesfulCompilations.ToString() +
-						Environment.NewLine + "-----" + Environment.NewLine + Environment.NewLine
+						Environment.NewLine + Monitor + Environment.NewLine + "-----" + Environment.NewLine + Environment.NewLine
 						);
 						//reset
 						MessagesReceived = 0;
@@ -149,7 +148,7 @@ namespace LilyPondBot
 						SuccesfulCompilations = 0;
 					}
 
-					LastMessageTime = DateTime.UtcNow;
+					LatestMessageTime = DateTime.UtcNow;
 					UpdateMonitor = false;
 				}
 				//wait before redoing this
