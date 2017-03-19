@@ -24,15 +24,13 @@ namespace LilyPondBot
 		public static readonly string LogPath = Path.Combine(Directory.GetCurrentDirectory(), "logs.txt");
 		public static readonly string LilyPondPath = @"/usr/bin/lilypond";
 		public static readonly int DailyLogUtcHour = 3;
-		public static readonly string PaperSettings = 
-			@"\paper{
-    indent=0\mm
-    line-width=120\mm
-    oddHeaderMarkup = ##f
-  	evenHeaderMarkup = ##f
-  	oddFooterMarkup = ##f
-  	evenFooterMarkup = ##f
-}";
+		#if !DEBUG
+		//can be relative or absolute
+		public static readonly string LilySettingsPath = @"lilysettings.ly";
+		#endif
+		#if DEBUG
+		public static readonly string LilySettingsPath = @"../../lilysettings.ly";
+		#endif
 	}
 
 	public static class Api
@@ -73,7 +71,7 @@ namespace LilyPondBot
 			string filename;
 			var exists = false;
 			do {
-				filename = DateTime.UtcNow.ToString("yyMMddHHmmssff-") + (username ?? counter.ToString());
+				filename = DateTime.UtcNow.ToString("yyMMddHHmmssff-") + (username == "" ? counter.ToString() : username);
 				exists = Directory.GetFiles(Directory.GetCurrentDirectory()).Where(x => x.Contains(filename)).Any();
 				counter++;
 			} while (exists);
@@ -82,7 +80,11 @@ namespace LilyPondBot
 
 		public static string NormalizeOutput(this string output, string path, string filename)
 		{
-			return output.Replace(path + ":", "").Replace(path, filename).Replace(Environment.NewLine + Environment.NewLine, Environment.NewLine);
+			return output
+				.Replace(path + ":", "")
+				.Replace(path, filename)
+				.Replace(Environment.NewLine + Environment.NewLine, Environment.NewLine)
+				.Replace(string.Format(@"\include ""{0}"" ", Settings.LilySettingsPath), "");
 		}
 
 	}

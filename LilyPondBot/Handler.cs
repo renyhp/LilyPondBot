@@ -83,7 +83,7 @@ namespace LilyPondBot
 						break;
 				}
 			} else if (msg.Chat.Type == ChatType.Private) {
-				LilyPond.FastCompile(msg.Text, msg.From.Username, chatid, msg.From.Id != Settings.renyhp);
+				LilyPond.FastCompile(msg.Text, msg.From.Username ?? "", chatid, msg.From.Id != Settings.renyhp);
 			}
 
 			return;

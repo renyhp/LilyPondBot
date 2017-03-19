@@ -56,5 +56,6 @@
     <None Include="packages.config" />
     <None Include="token.txt" />
     <None Include="debugtoken.txt" />
+    <None Include="lilysettings.ly" />
   </ItemGroup>
 </Project>

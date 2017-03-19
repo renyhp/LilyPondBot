@@ -24,13 +24,12 @@ namespace LilyPondBot
 			string srcfile = filename + ".ly";
 			string srcpath = Path.Combine(path, srcfile);
 
-			//set paper settings
-			text = Settings.PaperSettings + text;
+			//set paper settings & get rid of missing version warning
+			text = 
+				text.Contains(@"\version ") ? "" : (@"\version """ + Program.LilyVersion + "\" ")
+			+ string.Format(@"\include ""{0}"" ", Settings.LilySettingsPath) + text;
 
-			//get rid of missing version warning
-			if (!text.Contains(@"\version "))
-				text = @"\version """ + Program.LilyVersion + "\"" + Environment.NewLine + text;
-
+			//save it
 			File.WriteAllText(srcpath, text);
 
 			//ok, compile
