@@ -24,7 +24,7 @@ namespace LilyPondBot
 		public static DateTime StartTime = DateTime.UtcNow;
 		public static int MessagesReceived = 0;
 		public static int CommandsProcessed = 0;
-		public static int SuccesfulCompilations = 0;
+		public static int SuccessfulCompilations = 0;
 		public static string Monitor = "";
 		public static DateTime LatestMessageTime = DateTime.UtcNow;
 		public static DateTime PreviousMessageTime = DateTime.UtcNow;
@@ -130,10 +130,10 @@ namespace LilyPondBot
 				if (UpdateMonitor) {
 					//update the monitor
 					Monitor = "Start time: " + StartTime.ToString("dd/MM/yyyy HH:mm:ss") + " UTC" + Environment.NewLine +
-					"Last message received: " + LatestMessageTime.ToString("dd/MM/yyyy HH:mm:ss") + " UTC" + Environment.NewLine +
+					"Latest message received: " + LatestMessageTime.ToString("dd/MM/yyyy HH:mm:ss") + " UTC" + Environment.NewLine +
 					"Messages received: " + MessagesReceived.ToString() + Environment.NewLine +
 					"Commands processed: " + CommandsProcessed.ToString() + Environment.NewLine +
-					"Successful compilations: " + SuccesfulCompilations.ToString();
+					"Successful compilations: " + SuccessfulCompilations.ToString();
 					Console.SetCursorPosition(0, 0);
 					Console.Clear();
 					Console.WriteLine(version + Environment.NewLine + Monitor);
@@ -147,7 +147,7 @@ namespace LilyPondBot
 						//reset
 						MessagesReceived = 0;
 						CommandsProcessed = 0;
-						SuccesfulCompilations = 0;
+						SuccessfulCompilations = 0;
 					}
 
 					PreviousMessageTime = LatestMessageTime;

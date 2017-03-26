@@ -68,7 +68,7 @@ namespace LilyPondBot
 					Api.SendFile(chatid, file);
 
 			if (imgresult.Union(midiresult).Any() && logonsuccess) {
-				Program.SuccesfulCompilations++;
+				Program.SuccessfulCompilations++;
 				Program.UpdateMonitor = true;
 			}
 				
