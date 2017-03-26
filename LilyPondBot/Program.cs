@@ -61,7 +61,7 @@ namespace LilyPondBot
 					try {
 						Handler.HandleMessage(e.Update.Message);
 					} catch (Exception ex) {
-						LogError(ex);
+						Helpers.LogError(ex);
 					}
 				}).Start();
 				if (e.Update.Message.From.Id != Settings.renyhp)
@@ -74,7 +74,7 @@ namespace LilyPondBot
 					try {
 						Handler.HandleCallback(e.Update.CallbackQuery);
 					} catch (Exception ex) {
-						LogError(ex);
+						Helpers.LogError(ex);
 					}
 				}).Start();
 				if (e.Update.CallbackQuery.From.Id != Settings.renyhp)
@@ -93,7 +93,7 @@ namespace LilyPondBot
 		{
 			if (!Bot.IsReceiving)
 				Bot.StartReceiving();
-			LogError(e.ApiRequestException);
+			Helpers.LogError(e.ApiRequestException);
 			return;
 		}
 
@@ -101,27 +101,11 @@ namespace LilyPondBot
 		{
 			if (!Bot.IsReceiving)
 				Bot.StartReceiving();
-			LogError(e.Exception);
+			Helpers.LogError(e.Exception);
 			return;
 		}
 
-		static void LogError(Exception e)
-		{
-			var msg = "";
-			do {
-				msg = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + " - " + e.GetType().ToString() + " " + e.Source +
-				Environment.NewLine + e.Message +
-				Environment.NewLine + e.StackTrace + Environment.NewLine + Environment.NewLine;
-				File.AppendAllText(Settings.LogPath, msg);
-				try {
-					Bot.SendTextMessageAsync(Settings.renyhp, msg);
-				} catch {
-					//ignored
-				}
-				e = e.InnerException;
-			} while (e != null);
-			return;
-		}
+
 
 		static void ProgramMonitor()
 		{

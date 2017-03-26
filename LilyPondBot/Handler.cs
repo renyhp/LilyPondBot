@@ -6,6 +6,8 @@ using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using File = System.IO.File;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -21,8 +23,13 @@ namespace LilyPondBot
 		{
 			var chatid = msg.Chat.Id;
 
+			if (msg.Document != null) {
+				//send the same menu as /compile!
+				return;
+			}
+				
+
 			if (msg.Text == null)
-				//for v2.0: if it's a document, try to compile it!
 				return;
 			
 			if (msg.Text.StartsWith("/") || msg.Text.StartsWith("!")) {
@@ -33,8 +40,10 @@ namespace LilyPondBot
 
 				var text = msg.Text.Replace("@" + Program.Me.Username, "").TrimStart('/', '!');
 				var cmd = text.Contains(' ') ? text.Substring(0, text.IndexOf(' ')) : text;
-				string reply = "";
+				text = text.Replace(cmd, "").Trim();
 
+				string reply = "";
+				string file = "";
 				switch (cmd) {
 					case "start":
 						reply = string.Format("Hello! Send me some LilyPond code{0}, I will compile it for you and send you a picture with the sheet music.", msg.Chat.Type != ChatType.Private ? " in PM" : "");
@@ -68,17 +77,37 @@ namespace LilyPondBot
 						Api.Send(chatid, reply);
 						break;
 					case "append":
-					//start a new Task to monitor old files
-					//if the file is too big, give error
-					//append the text to a (new) file, named after the chatid.
+						new Task(() => CheckOldFiles()).Start();
+						file = Path.Combine(Directory.GetCurrentDirectory(), chatid.ToString() + ".ly");
+						if (File.Exists(file) && new FileInfo(file).Length > Settings.MaxFileSizeMB * 1048576) {
+							Api.Send(chatid, "Maximum file size exceeded.");
+							return;
+						}
+						File.AppendAllText(file, Environment.NewLine + text);
+						if (new FileInfo(file).Length > Settings.MaxFileSizeMB * 1048576) {
+							Api.Send(chatid, "<b>Warning: Maximum file size exceeded.</b>\nYou can't append any more text. If you need to append some more text, please use /show to download your file and edit it on your device, then send it to me, I'll try to compile it.");
+						} else {
+							Api.Send(chatid, string.Format("Appended{0} to your code. Use /show to download your file.", string.IsNullOrWhiteSpace(text) ? " a blank line" : ""));
+						}
 						break;
 					case "show":
-					//start the Task
-					//send the file with this chatid
+						new Task(() => CheckOldFiles()).Start();
+						file = Path.Combine(Directory.GetCurrentDirectory(), chatid.ToString() + ".ly");
+						if (File.Exists(file)) {
+							Api.SendFile(chatid, file);
+						} else {
+							Api.Send(chatid, "File not found. Use <code>/append &lt;some code&gt;</code> to create it.");
+						}
 						break;
 					case "delete":
-					//start the Task
-					//delete the file with this chatid
+						new Task(() => CheckOldFiles()).Start();
+						file = Path.Combine(Directory.GetCurrentDirectory(), chatid.ToString() + ".ly");
+						if (File.Exists(file)) {
+							File.Delete(file);
+							Api.Send(chatid, "File deleted.");
+						} else {
+							Api.Send(chatid, "File not found. Use <code>/append &lt;some code&gt;</code> to create it.");
+						}
 						break;
 					case "compile":
 					//send a menu: Set file format. Set page size / adjust padding. Compile. 
@@ -100,7 +129,16 @@ namespace LilyPondBot
 			return;
 		}
 
-
+		private static void CheckOldFiles()
+		{
+			foreach (var file in Directory.GetFiles(Directory.GetCurrentDirectory()).Where(x => x.EndsWith(".ly") && File.GetLastWriteTime(x).CompareTo(DateTime.Now.AddDays(-1)) < 0)) {
+				try {
+					File.Delete(file);
+				} catch (Exception e) {
+					Helpers.LogError(e);
+				}
+			}
+		}
 	}
 }
 

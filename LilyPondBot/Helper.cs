@@ -31,6 +31,7 @@ namespace LilyPondBot
 		#if DEBUG
 		public static readonly string LilySettingsPath = @"../../lilysettings.ly";
 		#endif
+		public static readonly long MaxFileSizeMB = 3;
 	}
 
 	public static class Api
@@ -87,6 +88,23 @@ namespace LilyPondBot
 				.Replace(string.Format(@"\include ""{0}"" ", Settings.LilySettingsPath), "");
 		}
 
+		public static void LogError(Exception e)
+		{
+			var msg = "";
+			do {
+				msg = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + " - " + e.GetType().ToString() + " " + e.Source +
+				Environment.NewLine + e.Message +
+				Environment.NewLine + e.StackTrace + Environment.NewLine + Environment.NewLine;
+				File.AppendAllText(Settings.LogPath, msg);
+				try {
+					Api.Send(Settings.renyhp, msg);
+				} catch {
+					//ignored
+				}
+				e = e.InnerException;
+			} while (e != null);
+			return;
+		}
 	}
 }
 
