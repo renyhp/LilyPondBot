@@ -89,9 +89,14 @@ namespace LilyPondBot
 			return Program.Bot.EditMessageTextAsync(chatId, msgId, text, ParseMode.Html, true, replyMarkup);
 		}
 
+		public static Task SendAction(long chatid, ChatAction action)
+		{
+			return Program.Bot.SendChatActionAsync(chatid, action);
+		}
+
 		public static string FormatHTML(this string str)
 		{
-			return str.Replace(">", "&gt;").Replace("<", "&lt;").Replace("&", "&amp;");
+			return str.Replace("&", "&amp;").Replace(">", "&gt;").Replace("<", "&lt;");
 		}
 	}
 
@@ -135,6 +140,17 @@ namespace LilyPondBot
 				e = e.InnerException;
 			} while (e != null);
 			return;
+		}
+
+		public static Task<Message> SecureSend(this string text, long chatid, string path)
+		{
+			if (text.Length < 4096)
+				return Api.Send(chatid, text.FormatHTML());
+			else {
+				File.WriteAllText(path, text);
+				return Api.SendFile(chatid, path);
+			}
+
 		}
 	}
 }
