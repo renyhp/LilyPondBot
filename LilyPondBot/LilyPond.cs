@@ -33,6 +33,7 @@ namespace LilyPondBot
 			File.WriteAllText(srcpath, text);
 
 			//ok, compile
+			Api.SendAction(chatid, ChatAction.Typing);
 			var process = LilyPondProcess($"-dbackend=eps -dresolution=300 --png --loglevel=WARN {srcpath}");
 
 			string error = "";
@@ -40,11 +41,13 @@ namespace LilyPondBot
 			error = error.NormalizeOutput(srcpath, srcfile);
 
 			if (error != "")
-				Api.Send(chatid, error.FormatHTML());
+				error.SecureSend(chatid, Path.Combine(path, filename + ".log"));
 
 			if (output != "") { //gonna want to know
-				Api.Send(Settings.renyhp, "OUTPUT\n\n" + output.FormatHTML());
-				Api.Send(Settings.renyhp, "ERROR\n\n" + error.FormatHTML());
+				error = "ERROR\n\n" + error;
+				error.SecureSend(Settings.renyhp, Path.Combine(path, filename + ".error"));
+				output = "OUTPUT\n\n" + output;
+				output.SecureSend(Settings.renyhp, Path.Combine(path, filename + ".output"));
 				Api.SendFile(Settings.renyhp, srcpath);
 			}
 
@@ -53,6 +56,7 @@ namespace LilyPondBot
 			var imgresult = Directory.GetFiles(path).Where(x => x.Contains(filename) && x.EndsWith(".png"));
 			if (imgresult.Any())  //yay successful compilation
 				foreach (var file in imgresult) {
+					Api.SendAction(chatid, ChatAction.UploadPhoto);
 					file.AddPadding(30, 30, 30, 30);
 					try {
 						Api.SendPhoto(chatid, file).Wait();
