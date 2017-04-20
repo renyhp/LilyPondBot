@@ -50,6 +50,8 @@
     <Compile Include="Handler.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="LilyPond.cs" />
+    <Compile Include="SQLite.cs" />
+    <Compile Include="SQLiteAsync.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

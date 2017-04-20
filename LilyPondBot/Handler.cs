@@ -6,13 +6,14 @@ using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using File = System.IO.File;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 using System.Text.RegularExpressions;
+using SQLite;
 
 namespace LilyPondBot
 {
@@ -99,18 +100,30 @@ namespace LilyPondBot
 							Api.Send(chatid, "File not found. Use <code>/append &lt;some code&gt;</code> to create it.");
 						}
 						break;
-					case "delete":
+					case "clear":
 						new Task(() => CheckOldFiles()).Start();
 						file = Path.Combine(Directory.GetCurrentDirectory(), chatid.ToString() + ".ly");
 						if (File.Exists(file)) {
 							File.Delete(file);
-							Api.Send(chatid, "File deleted.");
-						} else {
-							Api.Send(chatid, "File not found. Use <code>/append &lt;some code&gt;</code> to create it.");
+							Api.Send(chatid, "File cleared.");
 						}
 						break;
 					case "compile":
 					//send a menu: Set file format. Set page size / adjust padding. Compile. 
+						break;
+					case "settings":
+						var menu = new InlineKeyboardMarkup(new[] {
+							new [] {
+								new InlineKeyboardButton("File format", $"user|format|{msg.From.Id}"),
+								new InlineKeyboardButton("Page format", $"user|page|{msg.From.Id}")
+							},
+							new [] {
+								new InlineKeyboardButton("PNG padding", $"user|padding|{msg.From.Id}"),
+								new InlineKeyboardButton("Quit", $"quit")
+							}
+						});
+						Api.Send(chatid, "Manage your settings:", menu);
+
 						break;
 					default:
 						Program.CommandsProcessed--;
@@ -125,7 +138,41 @@ namespace LilyPondBot
 
 		public static void HandleCallback(CallbackQuery q)
 		{
-			//Not used
+			var chatid = q.Message.Chat.Id;
+			var msgid = q.Message.MessageId;
+			var args = q.Data.Split('|');
+			switch (args[0]) {
+				case "user":
+					using (var db = new SQLiteConnection("lilypondbot.db")) {
+						var user = db.Table<LilyUser>().FirstOrDefault(x => x.TelegramId == q.From.Id);
+						if (user == null) {
+							user = new LilyUser(q.From.Id);
+							db.Insert(user);
+						}
+
+						switch (args[1]) {
+							case "format":
+								if (args.Length < 4) {
+									var menu = new InlineKeyboardMarkup(
+										           new[] {
+											new InlineKeyboardButton("PDF", $"{q.Data}|pdf"),
+											new InlineKeyboardButton("PNG", $"{q.Data}|png")
+										}
+									           );
+									Api.Edit(chatid, msgid, "Set your default format.\nCurrent: " + (user.Format == "" ? "PDF" : user.Format), menu);
+								} else {
+									user.Format = args[4];
+									db.Update(user);
+									Api.Edit(chatid, msgid, "Format set to " + args[4]);
+								}
+								break;
+							case "page":
+								break;
+						}
+
+					}
+					break;
+			}
 			return;
 		}
 

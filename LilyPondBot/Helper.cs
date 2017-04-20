@@ -9,9 +9,40 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using File = System.IO.File;
+using SQLite;
 
 namespace LilyPondBot
 {
+	public class LilyUser
+	{
+		public LilyUser()
+		{
+		}
+
+		public LilyUser(long id)
+		{
+			TelegramId = id;
+		}
+
+		[PrimaryKey]
+		public long Id { get; }
+
+		public long TelegramId { get; }
+
+		public string Format { get; set; }
+
+		public string Page { get; set; }
+
+		public Nullable<int> LeftPadding { get; set; }
+
+		public Nullable<int> RightPadding { get; set; }
+
+		public Nullable<int> UpperPadding { get; set; }
+
+		public Nullable<int> LowerPadding { get; set; }
+	}
+
+
 	public static class Settings
 	{
 		#if !DEBUG
@@ -36,7 +67,7 @@ namespace LilyPondBot
 
 	public static class Api
 	{
-		public static Task<Message> Send(long chatId, string text, int replyid = 0, IReplyMarkup replyMarkup = null)
+		public static Task<Message> Send(long chatId, string text, IReplyMarkup replyMarkup = null, int replyid = 0)
 		{
 			return Program.Bot.SendTextMessageAsync(chatId, text, true, false, replyid, replyMarkup, ParseMode.Html);
 		}
