@@ -26,7 +26,7 @@ namespace LilyPondBot
 
 			//set paper settings & get rid of missing version warning
 			text = 
-				text.Contains(@"\version ") ? "" : (@"\version """ + Program.LilyVersion + "\" ")
+				(text.Contains(@"\version ") ? "" : @"\version """ + Program.LilyVersion + "\" ")
 			+ string.Format(@"\include ""{0}"" ", Settings.LilySettingsPath) + text;
 
 			//save it
