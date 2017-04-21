@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LiteDB;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -6,6 +7,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using File = System.IO.File;
+using FileMode = System.IO.FileMode;
 
 namespace LilyPondBot
 {
@@ -33,15 +35,13 @@ namespace LilyPondBot
 
 	public class LilyUser
 	{
-		public LilyUser (long id)
+		public LilyUser ()
 		{
-			TelegramId = id;
 		}
 
-		public long Id { get; }
+		public Int32 Id { get; set; }
 
-
-		public long TelegramId { get; }
+		public long TelegramId { get; set; }
 
 		/// <summary>
 		/// Gets or sets the default format to compile in.
@@ -50,10 +50,10 @@ namespace LilyPondBot
 		public string Format { get; set; }
 
 		/// <summary>
-		/// Gets or sets the default page (used if the format is PDF).
+		/// Gets or sets the default paper size (used if the format is PDF).
 		/// </summary>
 		/// <value>a4, letter, etc.</value>
-		public string Page { get; set; }
+		public string Paper { get; set; }
 
 		public Nullable<int> LeftPadding { get; set; }
 
@@ -65,7 +65,7 @@ namespace LilyPondBot
 	}
 
 
-	public static class Api
+	public static class Api //mostly some aliases
 	{
 		public static Task<Message> Send (long chatid, string text, IReplyMarkup replyMarkup = null, int replyid = 0)
 		{
@@ -94,10 +94,20 @@ namespace LilyPondBot
 			return Program.Bot.SendChatActionAsync (chatid, action);
 		}
 
-		public static string FormatHTML (this string str)
+		public static Task<Message> AnswerQuery (CallbackQuery query, string text, string popuptext = null, bool edit = true, IReplyMarkup replyMarkup = null, bool showalert = false)
 		{
-			return str.Replace ("&", "&amp;").Replace (">", "&gt;").Replace ("<", "&lt;");
+			Program.Bot.AnswerCallbackQueryAsync (query.Id, popuptext, showalert);
+			if (edit)
+				return Program.Bot.EditMessageTextAsync (query.Message.Chat.Id, query.Message.MessageId, text, ParseMode.Html, true, replyMarkup);
+			else
+				return Program.Bot.SendTextMessageAsync (query.Message.Chat.Id, text, true, false, 0, replyMarkup, ParseMode.Html);
 		}
+
+		public static Task AnswerQuery (CallbackQuery query, bool showalert = false, string popuptext = null)
+		{
+			return Program.Bot.AnswerCallbackQueryAsync (query.Id, popuptext, showalert);
+		}
+			
 	}
 
 	public static class Helpers
@@ -112,6 +122,7 @@ namespace LilyPondBot
 				exists = Directory.GetFiles (Directory.GetCurrentDirectory ()).Where (x => x.Contains (filename)).Any ();
 				counter++;
 			} while (exists);
+
 			return filename;
 		}
 
@@ -146,11 +157,37 @@ namespace LilyPondBot
 		{
 			if (text.Length < 4096)
 				return Api.Send (chatid, text.FormatHTML ());
-			else {
-				File.WriteAllText (path, text);
-				return Api.SendFile (chatid, path);
-			}
+			File.WriteAllText (path, text);
+			return Api.SendFile (chatid, path);
 
+		}
+
+		public static LilyUser GetUser (this LiteDatabase db, long telegramid)
+		{
+			var users = db.GetCollection<LilyUser> ("Users");
+			var user = users.FindOne (x => x.TelegramId == telegramid);
+			if (user == null) {
+				user = new LilyUser { TelegramId = telegramid };
+				user.Id = users.Insert (user);
+			}
+			return user;
+		}
+
+		public static void Update (this LiteDatabase db, LilyUser user)
+		{
+			//don't wanna type GetCollection every time :P
+			db.GetCollection<LilyUser> ("Users").Update (user);
+			return;
+		}
+
+		public static string FormatHTML (this string str)
+		{
+			return str.Replace ("&", "&amp;").Replace (">", "&gt;").Replace ("<", "&lt;");
+		}
+
+		public static bool IsValidPaperSize (this string str)
+		{
+			return str.Length < 5; //nope XD TODO
 		}
 	}
 }

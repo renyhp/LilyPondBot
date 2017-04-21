@@ -1,6 +1,9 @@
-﻿using System;
+﻿using LiteDB;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -15,16 +18,32 @@ namespace LilyPondBot
 		public static void HandleMessage (Message msg)
 		{
 			var chatid = msg.Chat.Id;
-
 			if (msg.Document != null) {
-				//send the same menu as /compile!
+				//TODO: send the same menu as /compile!
 				return;
 			}
-				
-
 			if (msg.Text == null)
 				return;
 			
+			if ((msg.ReplyToMessage?.From.Id ?? 0) == Program.Me.Id) {
+				var text = msg.ReplyToMessage.Text;
+				var reply = msg.Text;
+				if (text.Contains ("Send me your default paper size")) {
+					reply = reply.ToLower ();
+					if (!reply.IsValidPaperSize ()) {
+						Api.Send (chatid, "Invalid paper size.\nSend me your default paper size again.", new ForceReply () { Force = true });
+						return;
+					}
+					using (var db = new LiteDatabase ("lilypondbot.db")) {
+						var user = db.GetUser (chatid);
+						user.Paper = reply;
+						db.Update (user);
+						Api.Send (chatid, "Default paper size set to " + user.Paper);
+					}
+					return;
+				}
+			}
+
 			if (msg.Text.StartsWith ("/") || msg.Text.StartsWith ("!")) {
 				if (msg.From.Id != Settings.renyhp) {
 					Program.CommandsProcessed++;
@@ -47,7 +66,7 @@ namespace LilyPondBot
 					reply += "\nFor now I can compile only little pieces of music, so the output of a big sheet music could be bad.\n<i>Note: Telegram Desktop substitutes &lt;&lt; with «. To avoid it, surround your code with triple backticks ```</i>";
 					reply += "\n\n<b>What is LilyPond?</b>\n<i>LilyPond is a very powerful open-source music engraving program, which compiles text code to produce sheet music output. Full information:</i> lilypond.org";
 					reply += "\n\n<b>Other commands:</b>\n/ping - Check response time\n/version - Get the running version\n/contact - Feedback & dev support info";
-						//add howto command with LilyPond help (overwriting \paper, explaining /append etc.)
+					//TODO: add howto command with LilyPond help (overwriting \paper, explaining /append etc.)
 					Api.Send (chatid, reply);
 					break;
 				case "ping":
@@ -101,21 +120,17 @@ namespace LilyPondBot
 					}
 					break;
 				case "compile":
-					//send a menu: Set file format. Set page size / adjust padding. Compile. 
+					//TODO: send a menu: Set file format. Set paper size / adjust padding. Compile. 
 					break;
 				case "settings":
-					var menu = new InlineKeyboardMarkup (new[] {
-						new [] {
-							new InlineKeyboardButton ("File format", $"user|format|{msg.From.Id}"),
-							new InlineKeyboardButton ("Page format", $"user|page|{msg.From.Id}")
-						},
-						new [] {
-							new InlineKeyboardButton ("PNG padding", $"user|padding|{msg.From.Id}"),
-							new InlineKeyboardButton ("Quit", $"quit")
-						}
-					});
-					Api.Send (chatid, "Manage your settings:", menu);
-
+					Api.Send (chatid, "Manage your settings:", MakeSettingsMenu (chatid));
+					break;
+				case "createdb":
+					using (var db = new LiteDatabase ("lilypondbot.db")) {
+						var users = db.GetCollection<LilyUser> ("Users");
+						var user = new LilyUser { Id = 0, TelegramId = 1 };
+						users.Insert (user);
+					}
 					break;
 				default:
 					Program.CommandsProcessed--;
@@ -131,32 +146,42 @@ namespace LilyPondBot
 		public static void HandleCallback (CallbackQuery q)
 		{
 			var chatid = q.Message.Chat.Id;
-			var msgid = q.Message.MessageId;
 			var args = q.Data.Split ('|');
 			switch (args [0]) {
 			case "user":
-				LilyUser user = null;
-                        //grab the user from the db
+				using (var db = new LiteDatabase ("lilypondbot.db")) {
+					var user = db.GetUser (chatid);
 
-				switch (args [1]) {
-				case "format":
-					if (args.Length < 4) {
-						var menu = new InlineKeyboardMarkup (
-							            new[] {
-								new InlineKeyboardButton ("PDF", $"{q.Data}|pdf"),
-								new InlineKeyboardButton ("PNG", $"{q.Data}|png")
+					switch (args [1]) {
+					case "format":
+						if (args.Length >= 4) {
+							user.Format = args [3];
+							db.Update (user);
+						}
+
+						var menu = new InlineKeyboardMarkup (new [] {
+							new[] {
+								new InlineKeyboardButton ("PDF", $"user|format|{chatid}|PDF"),
+								new InlineKeyboardButton ("PNG", $"user|format|{chatid}|PNG")
+							}, 
+							new [] {
+								new InlineKeyboardButton ("Back to settings", $"settings")
 							}
-						            );
-						Api.Edit (chatid, msgid, "Set your default format.\nCurrent: " + (String.IsNullOrWhiteSpace (user.Format) ? "PDF" : user.Format), menu);
-					} else {
-						user.Format = args [4];
-						//update the database
-						Api.Edit (chatid, msgid, "Format set to " + args [4].ToUpper ());
+						});
+						Api.AnswerQuery (q, "Set your default format.\nCurrent: " + (String.IsNullOrWhiteSpace (user.Format) ? "null" : user.Format), args.Length >= 4 ? args [3] : null, replyMarkup: menu);
+						break;
+					case "paper":
+						Api.AnswerQuery (q, "Send me your default paper size.\n<i>You can find a list of available paper sizes</i> <a href=\"http://lilypond.org/doc/v2.18/Documentation/notation/predefined-paper-sizes\">here</a>", edit: false, replyMarkup: new ForceReply () { Force = true });
+						break;
+					//TODO: finish this menu
 					}
-					break;
-				case "page":
-					break;
 				}
+				break;
+			case "quit":
+				Api.AnswerQuery (q, "Settings updated.");
+				break;
+			case "settings":
+				Api.AnswerQuery (q, "Manage your settings:", replyMarkup: MakeSettingsMenu (chatid));
 				break;
 			}
 			return;
@@ -171,6 +196,20 @@ namespace LilyPondBot
 					Helpers.LogError (e);
 				}
 			}
+		}
+
+		private static InlineKeyboardMarkup MakeSettingsMenu (long chatid)
+		{
+			return new InlineKeyboardMarkup (new[] {
+				new [] {
+					new InlineKeyboardButton ("File format", $"user|format|{chatid}"),
+					new InlineKeyboardButton ("Paper size", $"user|paper|{chatid}")
+				},
+				new [] {
+					new InlineKeyboardButton ("PNG padding", $"user|padding|{chatid}"),
+					new InlineKeyboardButton ("Close menu", $"quit")
+				}
+			});
 		}
 	}
 }
