@@ -125,13 +125,6 @@ namespace LilyPondBot
 				case "settings":
 					Api.Send (chatid, "Manage your settings:", MakeSettingsMenu (chatid));
 					break;
-				case "createdb":
-					using (var db = new LiteDatabase ("lilypondbot.db")) {
-						var users = db.GetCollection<LilyUser> ("Users");
-						var user = new LilyUser { Id = 0, TelegramId = 1 };
-						users.Insert (user);
-					}
-					break;
 				default:
 					Program.CommandsProcessed--;
 					break;
@@ -158,7 +151,6 @@ namespace LilyPondBot
 							user.Format = args [3];
 							db.Update (user);
 						}
-
 						var menu = new InlineKeyboardMarkup (new [] {
 							new[] {
 								new InlineKeyboardButton ("PDF", $"user|format|{chatid}|PDF"),
@@ -168,10 +160,17 @@ namespace LilyPondBot
 								new InlineKeyboardButton ("Back to settings", $"settings")
 							}
 						});
-						Api.AnswerQuery (q, "Set your default format.\nCurrent: " + (String.IsNullOrWhiteSpace (user.Format) ? "null" : user.Format), args.Length >= 4 ? args [3] : null, replyMarkup: menu);
+						Api.AnswerQuery (q, "Set your default format.\nCurrent: <b>" + (String.IsNullOrWhiteSpace (user.Format) ? "PDF" : user.Format) + "</b>", args.Length >= 4 ? args [3] : null, replyMarkup: menu);
 						break;
 					case "paper":
-						Api.AnswerQuery (q, "Send me your default paper size.\n<i>You can find a list of available paper sizes</i> <a href=\"http://lilypond.org/doc/v2.18/Documentation/notation/predefined-paper-sizes\">here</a>", edit: false, replyMarkup: new ForceReply () { Force = true });
+						Api.AnswerQuery (q, 
+							string.Format (
+								"Send me your default paper size.\n" +
+								"Current: <b>{0}</b>\n\n" +
+								"<i>You can find a list of available paper sizes</i> " +
+								"<a href=\"http://lilypond.org/doc/v2.18/Documentation/notation/predefined-paper-sizes\">here</a>", 
+								String.IsNullOrWhiteSpace (user.Paper) ? "a4" : user.Paper
+							), edit: false, replyMarkup: new ForceReply () { Force = true });
 						break;
 					//TODO: finish this menu
 					}

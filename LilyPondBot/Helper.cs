@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -55,13 +56,11 @@ namespace LilyPondBot
 		/// <value>a4, letter, etc.</value>
 		public string Paper { get; set; }
 
-		public Nullable<int> LeftPadding { get; set; }
-
-		public Nullable<int> RightPadding { get; set; }
-
-		public Nullable<int> UpperPadding { get; set; }
-
-		public Nullable<int> LowerPadding { get; set; }
+		/// <summary>
+		/// Gets or sets the padding to apply to PNG.
+		/// </summary>
+		/// <value>A string in the format "leftxrightxupperxlower" (eg 30x30x15x15)</value>
+		public string Padding { get; set; }
 	}
 
 
@@ -187,7 +186,51 @@ namespace LilyPondBot
 
 		public static bool IsValidPaperSize (this string str)
 		{
-			return str.Length < 5; //nope XD TODO
+			str = str.ToLower ();
+			if (str.EndsWith ("landscape"))
+				str = str.Replace ("landscape", "");
+			var regexs = new[] { 
+				"(a|b|c|pa)(\\d|10)", 
+				"ansi [a-e]", 
+				"arch ([a-e]|e1)", 
+				"(4|2)a0", 
+				"((junior|government|philippine)-)?legal",
+				"(double |quad )?demy",
+				"(government-|half )?letter",
+				"(large )?post"
+			};
+			var others = new[] {
+				"ledger",
+				"tabloid",
+				"11x17",
+				"17x11",
+				"engineering f",
+				"statement",
+				"quarto",
+				"octavo",
+				"executive",
+				"monarch",
+				"foolscap",
+				"folio",
+				"super-b",
+				"crown",
+				"medium",
+				"broadsheet",
+				"royal",
+				"elephant",
+				"atlas",
+				"imperial",
+				"antiquarian",
+				"f4"
+			};
+			if (others.Contains (str))
+				return true;
+			foreach (var r in regexs) {
+				var regex = new Regex ($"^{r}$");
+				if (regex.IsMatch (str))
+					return true;
+			}
+			return false;
 		}
 	}
 }
