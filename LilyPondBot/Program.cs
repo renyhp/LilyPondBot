@@ -79,7 +79,6 @@ namespace LilyPondBot
 			if (log) {
 				MessagesReceived++;
 				LatestMessageTime = DateTime.UtcNow;
-				UpdateMonitor = true;
 			}
 			return;
 		}
@@ -106,32 +105,30 @@ namespace LilyPondBot
 		{
 			var version = Program.BotVersion + " @" + Me.Username + Environment.NewLine + "GNU LilyPond " + Program.LilyVersion + Environment.NewLine;
 			while (true) {
-				if (UpdateMonitor) {
-					//update the monitor
-					Monitor = "Start time: " + StartTime.ToString ("dd/MM/yyyy HH:mm:ss") + " UTC" + Environment.NewLine +
-					"Latest message received: " + LatestMessageTime.ToString ("dd/MM/yyyy HH:mm:ss") + " UTC" + Environment.NewLine +
-					"Messages received: " + MessagesReceived.ToString () + Environment.NewLine +
-					"Commands processed: " + CommandsProcessed.ToString () + Environment.NewLine +
-					"Successful compilations: " + SuccessfulCompilations.ToString ();
-					Console.SetCursorPosition (0, 0);
-					Console.Clear ();
-					Console.WriteLine (version + Environment.NewLine + Monitor);
+				//update the monitor
+				Monitor = "Start time: " + StartTime.ToString ("dd/MM/yyyy HH:mm:ss") + " UTC" + Environment.NewLine +
+				"Latest message received: " + LatestMessageTime.ToString ("dd/MM/yyyy HH:mm:ss") + " UTC" + Environment.NewLine +
+				"Messages received: " + MessagesReceived.ToString () + Environment.NewLine +
+				"Commands processed: " + CommandsProcessed.ToString () + Environment.NewLine +
+				"Successful compilations: " + SuccessfulCompilations.ToString ();
+				Console.SetCursorPosition (0, 0);
+				Console.Clear ();
+				Console.WriteLine (version + Environment.NewLine + Monitor);
 
-					//daily log
-					if (PreviousMessageTime.CompareTo (DateTime.UtcNow.Date.AddHours (Settings.DailyLogUtcHour)) < 0 && LatestMessageTime.Hour >= Settings.DailyLogUtcHour) {
-						File.AppendAllText (
-							Settings.LogPath, DateTime.UtcNow.ToString ("yyyy/MM/dd HH:mm:ss") + " DAILY LOG ----- " +
-						Environment.NewLine + Monitor + Environment.NewLine + "-----" + Environment.NewLine + Environment.NewLine
-						);
-						//reset
-						MessagesReceived = 0;
-						CommandsProcessed = 0;
-						SuccessfulCompilations = 0;
-					}
-
-					PreviousMessageTime = LatestMessageTime;
-					UpdateMonitor = false;
+				//daily log
+				if (PreviousMessageTime.CompareTo (DateTime.UtcNow.Date.AddHours (Settings.DailyLogUtcHour)) < 0 && LatestMessageTime.Hour >= Settings.DailyLogUtcHour) {
+					File.AppendAllText (
+						Settings.LogPath, DateTime.UtcNow.ToString ("yyyy/MM/dd HH:mm:ss") + " DAILY LOG ----- " +
+					Environment.NewLine + Monitor + Environment.NewLine + "-----" + Environment.NewLine + Environment.NewLine
+					);
+					//reset
+					MessagesReceived = 0;
+					CommandsProcessed = 0;
+					SuccessfulCompilations = 0;
 				}
+
+				PreviousMessageTime = LatestMessageTime;
+
 				//wait before redoing this
 				Task.Delay (60000).Wait ();
 			}

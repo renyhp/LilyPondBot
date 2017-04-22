@@ -12,10 +12,10 @@ namespace LilyPondBot
 {
 	public static class LilyPond
 	{
-		public static void FastCompile (string text, string username, long chatid, bool logonsuccess)
+		public static void FastCompile (string text, long chatid, bool logonsuccess)
 		{
 			//first of all, where do we store the file	
-			string filename = Helpers.GenerateFilename (username);
+			string filename = chatid.ToString () + "-" + DateTime.UtcNow.ToString ("yyMMddHHmmssfff"); //hoping we won't get more than one request from the same user in less than a millisecond XD
 			string path = Directory.GetCurrentDirectory ();
 			string srcfile = filename + ".ly";
 			string srcpath = Path.Combine (path, srcfile);
@@ -34,7 +34,7 @@ namespace LilyPondBot
 
 			string error = "";
 			string output = Run (process, out error);
-			error = error.NormalizeOutput (srcpath, srcfile);
+			error = error.MakeReadable (srcpath, srcfile);
 
 			if (error != "")
 				error.SecureSend (chatid, Path.Combine (path, filename + ".log"));
@@ -67,10 +67,8 @@ namespace LilyPondBot
 				foreach (var file in midiresult)
 					Api.SendFile (chatid, file);
 
-			if (imgresult.Union (midiresult).Any () && logonsuccess) {
+			if (logonsuccess && imgresult.Union (midiresult).Any ())
 				Program.SuccessfulCompilations++;
-				Program.UpdateMonitor = true;
-			}
 				
 
 			//clean up

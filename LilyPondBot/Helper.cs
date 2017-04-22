@@ -40,7 +40,7 @@ namespace LilyPondBot
 		{
 		}
 
-		public Int32 Id { get; set; }
+		public int Id { get; set; }
 
 		public long TelegramId { get; set; }
 
@@ -102,7 +102,7 @@ namespace LilyPondBot
 				return Program.Bot.SendTextMessageAsync (query.Message.Chat.Id, text, true, false, 0, replyMarkup, ParseMode.Html);
 		}
 
-		public static Task AnswerQuery (CallbackQuery query, bool showalert = false, string popuptext = null)
+		public static Task AnswerQuery (string popuptext, CallbackQuery query, bool showalert = false)
 		{
 			return Program.Bot.AnswerCallbackQueryAsync (query.Id, popuptext, showalert);
 		}
@@ -111,21 +111,7 @@ namespace LilyPondBot
 
 	public static class Helpers
 	{
-		public static string GenerateFilename (string username)
-		{
-			int counter = 0;
-			string filename;
-			var exists = false;
-			do {
-				filename = DateTime.UtcNow.ToString ("yyMMddHHmmssff-") + (username == "" ? counter.ToString () : username);
-				exists = Directory.GetFiles (Directory.GetCurrentDirectory ()).Where (x => x.Contains (filename)).Any ();
-				counter++;
-			} while (exists);
-
-			return filename;
-		}
-
-		public static string NormalizeOutput (this string output, string path, string filename)
+		public static string MakeReadable (this string output, string path, string filename)
 		{
 			return output
 				.Replace (path + ":", "")
@@ -172,11 +158,10 @@ namespace LilyPondBot
 			return user;
 		}
 
-		public static void Update (this LiteDatabase db, LilyUser user)
+		public static bool Update (this LiteDatabase db, LilyUser user)
 		{
 			//don't wanna type GetCollection every time :P
-			db.GetCollection<LilyUser> ("Users").Update (user);
-			return;
+			return db.GetCollection<LilyUser> ("Users").Update (user);
 		}
 
 		public static string FormatHTML (this string str)
@@ -187,10 +172,12 @@ namespace LilyPondBot
 		public static bool IsValidPaperSize (this string str)
 		{
 			str = str.ToLower ();
+
 			if (str.EndsWith ("landscape"))
-				str = str.Replace ("landscape", "");
+				str = str.Remove (str.Length - 9);
+			
 			var regexs = new[] { 
-				"(a|b|c|pa)(\\d|10)", 
+				"([abc]|pa)(\\d|10)", 
 				"ansi [a-e]", 
 				"arch ([a-e]|e1)", 
 				"(4|2)a0", 
@@ -199,7 +186,7 @@ namespace LilyPondBot
 				"(government-|half )?letter",
 				"(large )?post"
 			};
-			var others = new[] {
+			var strings = new[] {
 				"ledger",
 				"tabloid",
 				"11x17",
@@ -223,14 +210,31 @@ namespace LilyPondBot
 				"antiquarian",
 				"f4"
 			};
-			if (others.Contains (str))
+
+			if (strings.Contains (str))
 				return true;
+
 			foreach (var r in regexs) {
 				var regex = new Regex ($"^{r}$");
-				if (regex.IsMatch (str))
+				if (regex.IsMatch (str)) {    
 					return true;
+				}
 			}
+			
 			return false;
+		}
+
+		public static string DescribePadding (string str)
+		{
+			if (!new Regex ("^(\\d{1,3}x){3}\\d{1,3}$").IsMatch (str))
+				throw new InvalidDataException ();
+			var directions = new [] { "Left", "Right", "Upper", "Lower" };
+			var paddings = str.Split ('x');
+			string padding = "";
+			for (var i = 0; i < 4; i++) {
+				padding += "<i>" + directions [i] + " padding:</i> " + paddings [i] + (i == 3 ? "" : "\n");
+			}
+			return padding;
 		}
 	}
 }
