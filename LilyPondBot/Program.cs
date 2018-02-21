@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Reflection;
-using System.Globalization;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
-
-using TelegramFile = Telegram.Bot.Types.File;
 using File = System.IO.File;
+using System.Collections.Generic;
 
 namespace LilyPondBot
 {
@@ -47,39 +43,57 @@ namespace LilyPondBot
 			 
 			Bot.StartReceiving();
 
-			Thread.Sleep(-1);
+            new ManualResetEvent(false).WaitOne();
 		}
 
 
 		static void Bot_OnUpdate(object sender, Telegram.Bot.Args.UpdateEventArgs e)
 		{
 			bool log = false;
-			if (e.Update.Message != null) {
-				if (e.Update.Message?.Date == null || e.Update.Message.Date < Program.StartTime.AddSeconds(-5))
-					return;
-				new Task(() => {
-					try {
-						Handler.HandleMessage(e.Update.Message);
-					} catch (Exception ex) {
-						LogError(ex);
-					}
-				}).Start();
-				if (e.Update.Message.From.Id != Settings.renyhp)
-					log = true;
-			}
-			if (e.Update.CallbackQuery != null) {
-				if (e.Update.CallbackQuery?.Message?.Date == null || e.Update.CallbackQuery.Message.Date < Program.StartTime.AddSeconds(-5))
-					return;
-				new Task(() => {
-					try {
-						Handler.HandleCallback(e.Update.CallbackQuery);
-					} catch (Exception ex) {
-						LogError(ex);
-					}
-				}).Start();
-				if (e.Update.CallbackQuery.From.Id != Settings.renyhp)
-					log = true;
-			}
+
+            try
+            {
+                if (e.Update.Message != null)
+                {
+                    if (e.Update.Message?.Date == null || e.Update.Message.Date < Program.StartTime.AddSeconds(-5))
+                        return;
+                    new Task(() =>
+                    {
+                        try
+                        {
+                            Handler.HandleMessage(e.Update.Message);
+                        }
+                        catch (Exception ex)
+                        {
+                            LogError(ex);
+                        }
+                    }).Start();
+                    if (e.Update.Message.From.Id != Settings.renyhp)
+                        log = true;
+                }
+                if (e.Update.CallbackQuery != null)
+                {
+                    if (e.Update.CallbackQuery?.Message?.Date == null || e.Update.CallbackQuery.Message.Date < Program.StartTime.AddSeconds(-5))
+                        return;
+                    new Task(() =>
+                    {
+                        try
+                        {
+                            Handler.HandleCallback(e.Update.CallbackQuery);
+                        }
+                        catch (Exception ex)
+                        {
+                            LogError(ex);
+                        }
+                    }).Start();
+                    if (e.Update.CallbackQuery.From.Id != Settings.renyhp)
+                        log = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogError(ex);
+            }
 
 			if (log) {
 				MessagesReceived++;
@@ -107,19 +121,36 @@ namespace LilyPondBot
 
 		static void LogError(Exception e)
 		{
-			var msg = "";
+            var msg = "";
+            var counter = 0;
 			do {
-				msg = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + " - " + e.GetType().ToString() + " " + e.Source +
-				Environment.NewLine + e.Message +
-				Environment.NewLine + e.StackTrace + Environment.NewLine + Environment.NewLine;
-				File.AppendAllText(Settings.LogPath, msg);
-				try {
-					Bot.SendTextMessageAsync(Settings.renyhp, msg);
-				} catch {
-					//ignored
-				}
-				e = e.InnerException;
+                var indents = new String('>', counter++);
+				msg += indents + DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + " - " + e.GetType().ToString() + " " + e.Source +
+				    Environment.NewLine + indents + e.Message +
+				    Environment.NewLine + indents + e.StackTrace +
+                    Environment.NewLine + Environment.NewLine;
+                e = e.InnerException;
 			} while (e != null);
+
+            //send to renyhp
+            foreach (var text in ChunksUpto(msg, 4000))
+            {
+                try
+                {
+                    Bot.SendTextMessageAsync(Settings.renyhp, text);
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
+
+            //log
+            msg += Environment.NewLine +
+                "------------------------------------------------------------------------------------" +
+                Environment.NewLine + Environment.NewLine;
+            File.AppendAllText(Settings.LogPath, msg);
+
 			return;
 		}
 
@@ -157,5 +188,11 @@ namespace LilyPondBot
 				Task.Delay(60000).Wait();
 			}
 		}
+
+        static IEnumerable<string> ChunksUpto(string str, int maxChunkSize)
+        {
+            for (int i = 0; i < str.Length; i += maxChunkSize)
+                yield return str.Substring(i, Math.Min(maxChunkSize, str.Length - i));
+        }
 	}
 }

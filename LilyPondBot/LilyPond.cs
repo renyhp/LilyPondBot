@@ -2,19 +2,14 @@
 using System.Linq;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Imaging;
-using System.Globalization;
 using System.IO;
-using System.Threading;
 using File = System.IO.File;
-using Telegram.Bot;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using System.Text.RegularExpressions;
 
 namespace LilyPondBot
 {
-	public static class LilyPond
+    public static class LilyPond
 	{
 		public static void FastCompile(string text, string username, long chatid, bool logonsuccess)
 		{

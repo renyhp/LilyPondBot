@@ -1,20 +1,11 @@
 ﻿using System;
 using System.Linq;
-using System.Diagnostics;
-using System.Drawing.Imaging;
-using System.Globalization;
-using System.IO;
-using System.Threading;
-using System.Reflection;
-using File = System.IO.File;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using System.Text.RegularExpressions;
 
 namespace LilyPondBot
 {
-	public static class Handler
+    public static class Handler
 	{
 
 		public static void HandleMessage(Message msg)

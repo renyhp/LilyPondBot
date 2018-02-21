@@ -9,6 +9,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using File = System.IO.File;
+using Telegram.Bot.Types.InputFiles;
 
 namespace LilyPondBot
 {
@@ -37,22 +38,22 @@ namespace LilyPondBot
 	{
 		public static Task<Message> Send(long chatId, string text, int replyid = 0, IReplyMarkup replyMarkup = null)
 		{
-			return Program.Bot.SendTextMessageAsync(chatId, text, true, false, replyid, replyMarkup, ParseMode.Html);
+            return Program.Bot.SendTextMessageAsync(chatId, text, ParseMode.Html, true, false, replyid, replyMarkup);
 		}
 
 		public static Task<Message> SendFile(long chatid, string path)
 		{
 			string filename = Path.GetFileName(path);
-			return Program.Bot.SendDocumentAsync(chatid, new FileToSend(filename, new FileStream(path, FileMode.Open)));
+            return Program.Bot.SendDocumentAsync(chatid, new InputOnlineFile(new FileStream(path, FileMode.Open), filename));
 		}
 
 		public static Task<Message> SendPhoto(long chatid, string path)
 		{
 			string filename = Path.GetFileName(path);
-			return Program.Bot.SendPhotoAsync(chatid, new FileToSend(filename, new FileStream(path, FileMode.Open)));
+            return Program.Bot.SendPhotoAsync(chatid, new InputOnlineFile(new FileStream(path, FileMode.Open), filename));
 		}
 
-		public static Task<Message> Edit(long chatId, int msgId, string text, IReplyMarkup replyMarkup = null)
+		public static Task<Message> Edit(long chatId, int msgId, string text, InlineKeyboardMarkup replyMarkup = null)
 		{
 			return Program.Bot.EditMessageTextAsync(chatId, msgId, text, ParseMode.Html, true, replyMarkup);
 		}
