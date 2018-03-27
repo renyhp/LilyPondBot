@@ -7,6 +7,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using File = System.IO.File;
 using System.Collections.Generic;
+using Telegram.Bot.Exceptions;
 
 namespace LilyPondBot
 {
@@ -118,8 +119,11 @@ namespace LilyPondBot
 			return;
 		}
 
-		static void LogError(Exception e)
+		static void LogError(object o)
 		{
+            if ((o is ApiRequestException apiex && apiex.Message == "Request timed out") || !(o is Exception e))
+                return;
+
             var msg = "";
             var counter = 0;
 			do {
