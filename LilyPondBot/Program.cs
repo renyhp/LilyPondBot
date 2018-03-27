@@ -32,9 +32,8 @@ namespace LilyPondBot
 		{
 			Console.Title = "LilyPondBot";
 			Console.WriteLine(Program.BotVersion + Environment.NewLine + "GNU LilyPond " + Program.LilyVersion);
-			var token = File.ReadAllText(Settings.TokenPath);
-			Bot = new TelegramBotClient(token);
-			Me = Bot.GetMeAsync().Result;
+            Bot = new TelegramBotClient(File.ReadAllText(Settings.TokenPath)) { Timeout = TimeSpan.FromSeconds(20) };
+            Me = Bot.GetMeAsync().Result;
 			new Task(() => ProgramMonitor()).Start();
 
 			Bot.OnUpdate += Bot_OnUpdate;

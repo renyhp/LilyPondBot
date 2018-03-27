@@ -31,9 +31,8 @@ namespace LilyPondBot
 			Api.SendAction(chatid, ChatAction.Typing);
 			var process = LilyPondProcess($"-dbackend=eps -dresolution=300 --png --loglevel=WARN {srcpath}");
 
-			string error = "";
-			string output = Run(process, out error);
-			error = error.NormalizeOutput(srcpath, srcfile);
+            string output = Run(process, out string error);
+            error = error.NormalizeOutput(srcpath, srcfile);
 
 			if (error != "")
 				error.SecureSend(chatid, Path.Combine(path, filename + ".log"));
@@ -46,14 +45,15 @@ namespace LilyPondBot
 				Api.SendFile(Settings.renyhp, srcpath);
 			}
 
-
-			//send pngs
-			var imgresult = Directory.GetFiles(path).Where(x => x.Contains(filename) && x.EndsWith(".png"));
+            //send pngs
+            var imgresult = Directory.GetFiles(path).Where(x => x.Contains(filename) && x.EndsWith(".png"));
 			if (imgresult.Any())  //yay successful compilation
 				foreach (var file in imgresult) {
-					Api.SendAction(chatid, ChatAction.UploadPhoto);
-					file.AddPadding(30, 30, 30, 30);
-					try {
+                    WaitUntilFree(file);
+                    Api.SendAction(chatid, ChatAction.UploadPhoto);
+                    file.AddPadding(30, 30, 30, 30);
+                    Api.SendAction(chatid, ChatAction.UploadPhoto);
+                    try {
 						Api.SendPhoto(chatid, file).Wait();
 					} catch {
 						Api.SendFile(chatid, file).Wait();
@@ -61,7 +61,7 @@ namespace LilyPondBot
 				}
 
 			//send midis
-			var midiresult = Directory.GetFiles(path).Where(x => x.Contains(filename) && x.EndsWith(".midi"));
+			var midiresult = Directory.GetFiles(path).Where(x => x.Contains(filename) && x.EndsWith(".mid"));
 			if (midiresult.Any())
 				foreach (var file in midiresult)
 					Api.SendFile(chatid, file);
@@ -70,11 +70,14 @@ namespace LilyPondBot
 				Program.SuccesfulCompilations++;
 				Program.UpdateMonitor = true;
 			}
-				
 
-			//clean up
-			foreach (var f in Directory.GetFiles(path).Where(x => x.Contains(filename)))
-				File.Delete(f);
+
+            //clean up
+            foreach (var f in Directory.GetFiles(path).Where(x => x.Contains(filename)))
+            {
+                WaitUntilFree(f);
+                File.Delete(f);
+            }
 		}
 
 
@@ -123,9 +126,9 @@ namespace LilyPondBot
 
 		public static string GetLilyVersion()
 		{
-			var p = LilyPondProcess("-v");
+            var p = LilyPondProcess("-v");
 			var output = Run(p);
-			return new Regex(@"GNU LilyPond (\d+\.\d+\.\d+)\n").Match(output).Groups[1].Captures[0].Value;
+            return output.Substring(13, output.IndexOf('\r')-13);
 		}
 
 		private static void AddPadding(this string path, int left, int right, int top, int bottom)
@@ -133,15 +136,37 @@ namespace LilyPondBot
 			var img = Image.FromFile(path);
 			var dest = new Bitmap(img.Width + left + right, img.Height + top + bottom);
 			using (var g = Graphics.FromImage(dest)) {
-				g.DrawImage(img, left, top);
+				g.DrawImage(img, left, top, img.Width, img.Height);
 			}
 			string filename = Path.GetFileNameWithoutExtension(path);
 			string newfile = Path.Combine(Directory.GetCurrentDirectory(), filename + "-new.png");
 			dest.Save(newfile);
+            WaitUntilFree(path);
 			File.Delete(path);
-			File.Move(newfile, path);
+            WaitUntilFree(newfile);
+            File.Move(newfile, path);
 			return;
 		}
-	}
+
+        public static void WaitUntilFree(string file)
+        {
+            bool locked = true;
+            var start = DateTime.Now;
+            while (locked && DateTime.Now - start < TimeSpan.FromSeconds(3))
+            {
+                try
+                {
+                    FileStream fs = File.Open(file, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+                    fs.Close();
+                    locked = false;
+                }
+                catch (IOException)
+                {
+                    locked = true;
+                }
+            }
+            return;
+        }
+    }
 }
 

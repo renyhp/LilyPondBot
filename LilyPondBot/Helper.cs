@@ -23,7 +23,7 @@ namespace LilyPondBot
 		#endif
 		public static readonly long renyhp = 133748469;
 		public static readonly string LogPath = Path.Combine(Directory.GetCurrentDirectory(), "logs.txt");
-		public static readonly string LilyPondPath = @"/usr/bin/lilypond";
+		public static readonly string LilyPondPath = @"""C:\Program Files (x86)\LilyPond\usr\bin\lilypond.exe""";
 		public static readonly int DailyLogUtcHour = 3;
 		#if !DEBUG
 		//can be relative or absolute
@@ -102,6 +102,8 @@ namespace LilyPondBot
 				return Api.SendFile(chatid, path);
 			}
 		}
+
+        
 	}
 }
 
