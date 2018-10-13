@@ -86,19 +86,25 @@ namespace LilyPondBot
 
 		public static string NormalizeOutput(this string output, string path, string filename)
 		{
+            path = path.Replace('\\', '/');
+            var paths = new[] { path, path.Replace('/', '\\'), path.Replace("/", "\\\\") };
+            foreach (var p in paths)
+            {
+                output = output
+                    .Replace(p + ":", "")
+                    .Replace(p, filename);
+            }
 			return output
-				.Replace(path + ":", "")
-				.Replace(path, filename)
 				.Replace(Environment.NewLine + Environment.NewLine, Environment.NewLine)
 				.Replace(string.Format(@"\include ""{0}"" ", Settings.LilySettingsPath), "");
 		}
 
 		public static Task<Message> SecureSend(this string text, long chatid, string path)
 		{
-			if (text.Length < 4096)
+			if (text.Length < 3000)
 				return Api.Send(chatid, text.FormatHTML());
 			else {
-				File.WriteAllText(path, text);
+				File.WriteAllLines(path, text.Split('\n'));
 				return Api.SendFile(chatid, path);
 			}
 		}

@@ -6,6 +6,7 @@ using System.IO;
 using File = System.IO.File;
 using Telegram.Bot.Types.Enums;
 using System.Text.RegularExpressions;
+using System.Text;
 
 namespace LilyPondBot
 {
@@ -25,7 +26,7 @@ namespace LilyPondBot
 			+ string.Format(@"\include ""{0}"" ", Settings.LilySettingsPath) + text;
 
 			//save it
-			File.WriteAllText(srcpath, text);
+			File.WriteAllLines(srcpath, text.Split('\n'));
 
 			//ok, compile
 			Api.SendAction(chatid, ChatAction.Typing);
@@ -34,10 +35,10 @@ namespace LilyPondBot
             string output = Run(process, out string error);
             error = error.NormalizeOutput(srcpath, srcfile);
 
-			if (error != "")
+			if (!string.IsNullOrWhiteSpace(error))
 				error.SecureSend(chatid, Path.Combine(path, filename + ".log"));
 
-			if (output != "") { //gonna want to know
+			if (!string.IsNullOrWhiteSpace(output)) { //gonna want to know
 				error = "ERROR\n\n" + error;
 				error.SecureSend(Settings.renyhp, Path.Combine(path, filename + ".error"));
 				output = "OUTPUT\n\n" + output;
@@ -64,7 +65,10 @@ namespace LilyPondBot
 			var midiresult = Directory.GetFiles(path).Where(x => x.Contains(filename) && x.EndsWith(".mid"));
 			if (midiresult.Any())
 				foreach (var file in midiresult)
-					Api.SendFile(chatid, file);
+                {
+                    WaitUntilFree(file);
+                    Api.SendFile(chatid, file);
+                }
 
 			if (imgresult.Union(midiresult).Any() && logonsuccess) {
 				Program.SuccesfulCompilations++;
@@ -81,54 +85,59 @@ namespace LilyPondBot
 		}
 
 
-		private static Process LilyPondProcess(string args)
-		{
-			return new Process() { 
-				StartInfo = new ProcessStartInfo() {
-					FileName = Settings.LilyPondPath,
-					Arguments = args,
-					UseShellExecute = false,
-					RedirectStandardOutput = true,
-					RedirectStandardError = true
-				} 
-			};
-		}
+        private static Process LilyPondProcess(string args)
+        {
+            return new Process()
+            {
+                StartInfo = new ProcessStartInfo()
+                {
+                    FileName = Settings.LilyPondPath,
+                    Arguments = args,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                }
+            };
+        }
 
 		/// <summary>
 		/// Run the process. Returns stdout
 		/// </summary>
 		private static string Run(Process p)
 		{
-			p.Start();
-			string output = "";
-			if (p.StartInfo.RedirectStandardOutput == true) {
-				while (!p.StandardOutput.EndOfStream) {
-					output += p.StandardOutput.ReadLine() + Environment.NewLine;
-				}
-			}
-			return output;
-		}
+            var outputBuilder = new StringBuilder();
+            p.OutputDataReceived += (sender, args) => outputBuilder.AppendLine(args.Data);
+            p.Start();
+            p.BeginOutputReadLine();
+            p.WaitForExit();
+            p.CancelOutputRead();
+            return outputBuilder.ToString();
+        }
 
 		/// <summary>
 		/// Run the process and store stderr. Returns stdout
 		/// </summary>
 		private static string Run(Process p, out string error)
 		{
-			string output = Run(p);
-			error = "";
-			if (p.StartInfo.RedirectStandardError == true) {
-				while (!p.StandardError.EndOfStream) {
-					error += p.StandardError.ReadLine() + Environment.NewLine;
-				}
-			}
-			return output;
-		}
+            var outputBuilder = new StringBuilder();
+            var errorBuilder = new StringBuilder();
+            p.OutputDataReceived += (sender, args) => outputBuilder.AppendLine(args.Data);
+            p.ErrorDataReceived += (sender, args) => errorBuilder.AppendLine(args.Data);
+            p.Start();
+            p.BeginOutputReadLine();
+            p.BeginErrorReadLine();
+            p.WaitForExit();
+            p.CancelOutputRead();
+            p.CancelErrorRead();
+            error = errorBuilder.ToString();
+            return outputBuilder.ToString();
+        }
 
 		public static string GetLilyVersion()
 		{
             var p = LilyPondProcess("-v");
 			var output = Run(p);
-            return output.Substring(13, output.IndexOf('\r')-13);
+            return output.Substring(13, output.IndexOf(Environment.NewLine)-13);
 		}
 
 		private static void AddPadding(this string path, int left, int right, int top, int bottom)
@@ -141,6 +150,7 @@ namespace LilyPondBot
 			string filename = Path.GetFileNameWithoutExtension(path);
 			string newfile = Path.Combine(Directory.GetCurrentDirectory(), filename + "-new.png");
 			dest.Save(newfile);
+            img.Dispose();
             WaitUntilFree(path);
 			File.Delete(path);
             WaitUntilFree(newfile);
