@@ -29,14 +29,14 @@ namespace LilyPondBot
 				switch (cmd) {
 					case "start":
 						reply = string.Format("Hello! Send me some LilyPond code{0}, I will compile it for you and send you a picture with the sheet music.", msg.Chat.Type != ChatType.Private ? " in PM" : "");
-						Api.Send(chatid, reply);
+						Api.Send(chatid, reply).Wait();
 						break;
 					case "help":
 						reply = string.Format("Send me some LilyPond code{0}, I will compile it for you and send you a picture with the sheet music.", msg.Chat.Type != ChatType.Private ? " in PM" : "");
 						reply += "\nFor now I can compile only little pieces of music, so the output of a big sheet music could be bad.\n<i>Note: Telegram Desktop substitutes &lt;&lt; with «. To avoid it, surround your code with triple backticks ```</i>";
 						reply += "\n\n<b>What is LilyPond?</b>\n<i>LilyPond is a very powerful open-source music engraving program, which compiles text code to produce sheet music output. Full information:</i> lilypond.org";
 						reply += "\n\n<b>Other commands:</b>\n/ping - Check response time\n/version - Get the running version\n/contact - Feedback & dev support info";
-						Api.Send(chatid, reply);
+						Api.Send(chatid, reply).Wait();
 						break;
 					case "ping":
 						var ping = DateTime.Now - msg.Date;
@@ -47,15 +47,15 @@ namespace LilyPondBot
 						var result = Api.Send(chatid, reply).Result;
 						ping = DateTime.Now - sendtime;
 						reply += Environment.NewLine + "Time to send this message: " + ping.ToString(@"mm\:ss\.fff");
-						Api.Edit(chatid, result.MessageId, reply);
+						Api.Edit(chatid, result.MessageId, reply).Wait();
 						break;
 					case "version":
-						Api.Send(chatid, Program.BotVersion + Environment.NewLine + "GNU LilyPond " + Program.LilyVersion);
+						Api.Send(chatid, Program.BotVersion + Environment.NewLine + "GNU LilyPond " + Program.LilyVersion).Wait();
 						break;
 					case "contact":
 						reply = "If you like how I work, or if you want to make suggestions, or even criticisms, please <a href=\"https://t.me/storebot?start=lilypondbot\">rate me</a>, and leave some feedback.\n\n";
 						reply += "If you want to donate, or give some feedback in private, please PM my developer at @renyhp.";
-						Api.Send(chatid, reply);
+						Api.Send(chatid, reply).Wait();
 						break;
 					case "append":
 					//start a new Task to monitor old files

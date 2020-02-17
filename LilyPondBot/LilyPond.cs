@@ -47,7 +47,7 @@ namespace LilyPondBot
 				error.SecureSend(Settings.renyhp, Path.Combine(path, filename + ".error"));
 				output = "OUTPUT\n\n" + output;
 				output.SecureSend(Settings.renyhp, Path.Combine(path, filename + ".output"));
-				Api.SendFile(Settings.renyhp, srcpath);
+				Api.SendFile(Settings.renyhp, srcpath).Wait();
 			}
 
             //send pngs
