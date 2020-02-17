@@ -58,9 +58,9 @@ namespace LilyPondBot
 			return Program.Bot.EditMessageTextAsync(chatId, msgId, text, ParseMode.Html, true, replyMarkup);
 		}
 
-		public static Task SendAction(long chatid, ChatAction action)
+		public static Task SendAction(long chatid, ChatAction action, System.Threading.CancellationToken cancellationToken)
 		{
-			return Program.Bot.SendChatActionAsync(chatid, action);
+			return Program.Bot.SendChatActionAsync(chatid, action, cancellationToken);
 		}
 
 		public static string FormatHTML(this string str)

@@ -7,6 +7,7 @@ using File = System.IO.File;
 using Telegram.Bot.Types.Enums;
 using System.Text.RegularExpressions;
 using System.Text;
+using System.Threading;
 
 namespace LilyPondBot
 {
@@ -14,6 +15,9 @@ namespace LilyPondBot
 	{
 		public static void FastCompile(string text, string username, long chatid, bool logonsuccess)
 		{
+            var tokensource = new CancellationTokenSource();
+            var token = tokensource.Token;
+
 			//first of all, where do we store the file	
 			string filename = Helpers.GenerateFilename(username);
 			string path = Directory.GetCurrentDirectory();
@@ -29,7 +33,7 @@ namespace LilyPondBot
 			File.WriteAllLines(srcpath, text.Split('\n'));
 
 			//ok, compile
-			Api.SendAction(chatid, ChatAction.Typing);
+			var chataction = Api.SendAction(chatid, ChatAction.Typing, token);
 			var process = LilyPondProcess($"-dbackend=eps -dresolution=300 --png --loglevel=WARN {srcpath}");
 
             string output = Run(process, out string error);
@@ -51,9 +55,13 @@ namespace LilyPondBot
 			if (imgresult.Any())  //yay successful compilation
 				foreach (var file in imgresult) {
                     WaitUntilFree(file);
-                    Api.SendAction(chatid, ChatAction.UploadPhoto);
+                    if (!chataction.IsCompleted)
+                        tokensource.Cancel();
+                    chataction = Api.SendAction(chatid, ChatAction.UploadPhoto, token);
                     file.AddPadding(30, 30, 30, 30);
-                    Api.SendAction(chatid, ChatAction.UploadPhoto);
+                    if (!chataction.IsCompleted)
+                        tokensource.Cancel();
+                    chataction = Api.SendAction(chatid, ChatAction.UploadPhoto, token);
                     try {
 						Api.SendPhoto(chatid, file).Wait();
 					} catch {
@@ -67,7 +75,10 @@ namespace LilyPondBot
 				foreach (var file in midiresult)
                 {
                     WaitUntilFree(file);
-                    Api.SendFile(chatid, file);
+                    if (!chataction.IsCompleted)
+                        tokensource.Cancel();
+                    chataction = Api.SendAction(chatid, ChatAction.UploadAudio, token);
+                    Api.SendFile(chatid, file).Wait();
                 }
 
 			if (imgresult.Union(midiresult).Any() && logonsuccess) {

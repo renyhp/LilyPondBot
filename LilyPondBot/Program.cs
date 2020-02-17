@@ -35,17 +35,16 @@ namespace LilyPondBot
 			Console.WriteLine(Program.BotVersion + Environment.NewLine + "GNU LilyPond " + Program.LilyVersion);
             Bot = new TelegramBotClient(File.ReadAllText(Settings.TokenPath)) { Timeout = TimeSpan.FromSeconds(20) };
             Me = Bot.GetMeAsync().Result;
-			new Task(() => ProgramMonitor()).Start();
+			Task.Run(() => ProgramMonitor());
 
-			Bot.OnUpdate += Bot_OnUpdate;
-			Bot.OnReceiveError += Bot_OnReceiveError;
-			Bot.OnReceiveGeneralError += Bot_OnReceiveGeneralError;
-			 
+			Bot.OnUpdate += async (sender, e) => await Task.Run(() => Bot_OnUpdate(sender, e));
+			Bot.OnReceiveError += async (sender, e) => await Task.Run(() => Bot_OnReceiveError(sender, e));
+			Bot.OnReceiveGeneralError += async (sender, e) => await Task.Run(() => Bot_OnReceiveGeneralError(sender, e));
+
 			Bot.StartReceiving();
 
             new ManualResetEvent(false).WaitOne();
 		}
-
 
 		static void Bot_OnUpdate(object sender, Telegram.Bot.Args.UpdateEventArgs e)
 		{
@@ -57,35 +56,15 @@ namespace LilyPondBot
                 {
                     if (e.Update.Message?.Date == null || e.Update.Message.Date < Program.StartTime.AddSeconds(-5))
                         return;
-                    new Task(() =>
-                    {
-                        try
-                        {
-                            Handler.HandleMessage(e.Update.Message);
-                        }
-                        catch (Exception ex)
-                        {
-                            LogError(ex);
-                        }
-                    }).Start();
-                    if (e.Update.Message.From.Id != Settings.renyhp)
+					Handler.HandleMessage(e.Update.Message);
+					if (e.Update.Message.From.Id != Settings.renyhp)
                         log = true;
                 }
                 if (e.Update.CallbackQuery != null)
                 {
                     if (e.Update.CallbackQuery?.Message?.Date == null || e.Update.CallbackQuery.Message.Date < Program.StartTime.AddSeconds(-5))
                         return;
-                    new Task(() =>
-                    {
-                        try
-                        {
-                            Handler.HandleCallback(e.Update.CallbackQuery);
-                        }
-                        catch (Exception ex)
-                        {
-                            LogError(ex);
-                        }
-                    }).Start();
+                    Handler.HandleCallback(e.Update.CallbackQuery);
                     if (e.Update.CallbackQuery.From.Id != Settings.renyhp)
                         log = true;
                 }
