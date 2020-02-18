@@ -31,6 +31,7 @@ namespace LilyPondBot
 
         public async static void Main(string[] args)
         {
+            AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) => LogError(eventArgs.ExceptionObject);
             Console.Title = "LilyPondBot";
             Console.WriteLine(Program.BotVersion + Environment.NewLine + "GNU LilyPond " + Program.LilyVersion);
             Bot = new TelegramBotClient(File.ReadAllText(Settings.TokenPath)) { Timeout = TimeSpan.FromSeconds(20) };
@@ -50,28 +51,21 @@ namespace LilyPondBot
         {
             bool log = false;
 
-            try
+            if (e.Update.Message != null)
             {
-                if (e.Update.Message != null)
-                {
-                    if (e.Update.Message?.Date == null || e.Update.Message.Date < Program.StartTime.AddSeconds(-5))
-                        return;
-                    Handler.HandleMessage(e.Update.Message);
-                    if (e.Update.Message.From.Id != Settings.renyhp)
-                        log = true;
-                }
-                if (e.Update.CallbackQuery != null)
-                {
-                    if (e.Update.CallbackQuery?.Message?.Date == null || e.Update.CallbackQuery.Message.Date < Program.StartTime.AddSeconds(-5))
-                        return;
-                    Handler.HandleCallback(e.Update.CallbackQuery);
-                    if (e.Update.CallbackQuery.From.Id != Settings.renyhp)
-                        log = true;
-                }
+                if (e.Update.Message?.Date == null || e.Update.Message.Date < Program.StartTime.AddSeconds(-5))
+                    return;
+                Handler.HandleMessage(e.Update.Message);
+                if (e.Update.Message.From.Id != Settings.renyhp)
+                    log = true;
             }
-            catch (Exception ex)
+            if (e.Update.CallbackQuery != null)
             {
-                LogError(ex);
+                if (e.Update.CallbackQuery?.Message?.Date == null || e.Update.CallbackQuery.Message.Date < Program.StartTime.AddSeconds(-5))
+                    return;
+                Handler.HandleCallback(e.Update.CallbackQuery);
+                if (e.Update.CallbackQuery.From.Id != Settings.renyhp)
+                    log = true;
             }
 
             if (log)
