@@ -12,7 +12,7 @@ namespace LilyPondBot
 {
     public static class LilyPond
     {
-        public static void FastCompile(string text, string username, long chatid, bool logonsuccess)
+        public async static void FastCompile(string text, string username, long chatid, bool logonsuccess)
         {
             var tokensource = new CancellationTokenSource();
             var token = tokensource.Token;
@@ -39,15 +39,15 @@ namespace LilyPondBot
             error = error.NormalizeOutput(srcpath, srcfile);
 
             if (!string.IsNullOrWhiteSpace(error))
-                error.SecureSend(chatid, Path.Combine(path, filename + ".log"));
+                await error.SecureSend(chatid, Path.Combine(path, filename + ".log"));
 
             if (!string.IsNullOrWhiteSpace(output))
             { //gonna want to know
                 error = "ERROR\n\n" + error;
-                error.SecureSend(Settings.renyhp, Path.Combine(path, filename + ".error"));
+                await error.SecureSend(Settings.renyhp, Path.Combine(path, filename + ".error"));
                 output = "OUTPUT\n\n" + output;
-                output.SecureSend(Settings.renyhp, Path.Combine(path, filename + ".output"));
-                Api.SendFile(Settings.renyhp, srcpath).Wait();
+                await output.SecureSend(Settings.renyhp, Path.Combine(path, filename + ".output"));
+                await Api.SendFile(Settings.renyhp, srcpath);
             }
 
             //send pngs
@@ -65,11 +65,11 @@ namespace LilyPondBot
                     chataction = Api.SendAction(chatid, ChatAction.UploadPhoto, token);
                     try
                     {
-                        Api.SendPhoto(chatid, file).Wait();
+                        await Api.SendPhoto(chatid, file);
                     }
                     catch
                     {
-                        Api.SendFile(chatid, file).Wait();
+                        await Api.SendFile(chatid, file);
                     }
                 }
 
@@ -82,7 +82,7 @@ namespace LilyPondBot
                     if (!chataction.IsCompleted)
                         tokensource.Cancel();
                     chataction = Api.SendAction(chatid, ChatAction.UploadAudio, token);
-                    Api.SendFile(chatid, file).Wait();
+                    await Api.SendFile(chatid, file);
                 }
 
             if (imgresult.Union(midiresult).Any() && logonsuccess)
