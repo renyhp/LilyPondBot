@@ -32,9 +32,10 @@ namespace LilyPondBot
         public async static void Main(string[] args)
         {
             AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) => LogError(eventArgs.ExceptionObject);
+
             Console.Title = "LilyPondBot";
             Console.WriteLine(Program.BotVersion + Environment.NewLine + "GNU LilyPond " + Program.LilyVersion);
-            Bot = new TelegramBotClient(File.ReadAllText(Settings.TokenPath)) { Timeout = TimeSpan.FromSeconds(20) };
+            Bot = new TelegramBotClient(File.ReadAllText(Settings.TokenPath));
             Me = await Bot.GetMeAsync();
             _ = Task.Run(() => ProgramMonitor());
 
@@ -95,7 +96,9 @@ namespace LilyPondBot
 
         static void LogError(object o)
         {
-            if ((o is ApiRequestException apiex && apiex.Message == "Request timed out") || !(o is Exception e))
+            if (
+                //(o is ApiRequestException apiex && apiex.Message == "Request timed out") ||
+                !(o is Exception e))
                 return;
 
             var msg = "";
