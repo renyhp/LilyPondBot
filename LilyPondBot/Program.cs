@@ -29,14 +29,14 @@ namespace LilyPondBot
         public static readonly string LilyVersion = LilyPond.GetLilyVersion();
         public static bool UpdateMonitor = true;
 
-        public async static void Main(string[] args)
+        public static void Main(string[] args)
         {
             AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) => LogError(eventArgs.ExceptionObject);
 
             Console.Title = "LilyPondBot";
             Console.WriteLine(Program.BotVersion + Environment.NewLine + "GNU LilyPond " + Program.LilyVersion);
             Bot = new TelegramBotClient(File.ReadAllText(Settings.TokenPath));
-            Me = await Bot.GetMeAsync();
+            Me = Bot.GetMeAsync().Result;
             _ = Task.Run(() => ProgramMonitor());
 
             Bot.OnUpdate += async (sender, e) => await Task.Run(() => Bot_OnUpdate(sender, e));
