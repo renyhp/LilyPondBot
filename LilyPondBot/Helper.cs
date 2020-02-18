@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Linq;
 using System.IO;
 using System.Threading.Tasks;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -13,79 +10,80 @@ using Telegram.Bot.Types.InputFiles;
 
 namespace LilyPondBot
 {
-	public static class Settings
-	{
-		#if !DEBUG
-		public static readonly string TokenPath = Path.Combine(Directory.GetCurrentDirectory(), @"token.txt");
-		#endif
-		#if DEBUG
+    public static class Settings
+    {
+#if !DEBUG
+        public static readonly string TokenPath = Path.Combine(Directory.GetCurrentDirectory(), @"token.txt");
+#endif
+#if DEBUG
 		public static readonly string TokenPath = Path.Combine(Directory.GetCurrentDirectory(), @"../../debugtoken.txt");
-		#endif
-		public static readonly long renyhp = 133748469;
-		public static readonly string LogPath = Path.Combine(Directory.GetCurrentDirectory(), "logs.txt");
-		public static readonly string LilyPondPath = @"""C:\Program Files (x86)\LilyPond\usr\bin\lilypond.exe""";
-		public static readonly int DailyLogUtcHour = 3;
-		#if !DEBUG
-		//can be relative or absolute
-		public static readonly string LilySettingsPath = @"lilysettings.ly";
-		#endif
-		#if DEBUG
+#endif
+        public static readonly long renyhp = 133748469;
+        public static readonly string LogPath = Path.Combine(Directory.GetCurrentDirectory(), "logs.txt");
+        public static readonly string LilyPondPath = @"""C:\Program Files (x86)\LilyPond\usr\bin\lilypond.exe""";
+        public static readonly int DailyLogUtcHour = 3;
+#if !DEBUG
+        //can be relative or absolute
+        public static readonly string LilySettingsPath = @"lilysettings.ly";
+#endif
+#if DEBUG
 		public static readonly string LilySettingsPath = @"../../lilysettings.ly";
-		#endif
-	}
+#endif
+    }
 
-	public static class Api
-	{
-		public static Task<Message> Send(long chatId, string text, int replyid = 0, IReplyMarkup replyMarkup = null)
-		{
+    public static class Api
+    {
+        public static Task<Message> Send(long chatId, string text, int replyid = 0, IReplyMarkup replyMarkup = null)
+        {
             return Program.Bot.SendTextMessageAsync(chatId, text, ParseMode.Html, true, false, replyid, replyMarkup);
-		}
+        }
 
-		public static Task<Message> SendFile(long chatid, string path)
-		{
-			string filename = Path.GetFileName(path);
+        public static Task<Message> SendFile(long chatid, string path)
+        {
+            string filename = Path.GetFileName(path);
             return Program.Bot.SendDocumentAsync(chatid, new InputOnlineFile(new FileStream(path, FileMode.Open), filename));
-		}
+        }
 
-		public static Task<Message> SendPhoto(long chatid, string path)
-		{
-			string filename = Path.GetFileName(path);
+        public static Task<Message> SendPhoto(long chatid, string path)
+        {
+            string filename = Path.GetFileName(path);
             return Program.Bot.SendPhotoAsync(chatid, new InputOnlineFile(new FileStream(path, FileMode.Open), filename));
-		}
+        }
 
-		public static Task<Message> Edit(long chatId, int msgId, string text, InlineKeyboardMarkup replyMarkup = null)
-		{
-			return Program.Bot.EditMessageTextAsync(chatId, msgId, text, ParseMode.Html, true, replyMarkup);
-		}
+        public static Task<Message> Edit(long chatId, int msgId, string text, InlineKeyboardMarkup replyMarkup = null)
+        {
+            return Program.Bot.EditMessageTextAsync(chatId, msgId, text, ParseMode.Html, true, replyMarkup);
+        }
 
-		public static Task SendAction(long chatid, ChatAction action, System.Threading.CancellationToken cancellationToken)
-		{
-			return Program.Bot.SendChatActionAsync(chatid, action, cancellationToken);
-		}
+        public static Task SendAction(long chatid, ChatAction action, System.Threading.CancellationToken cancellationToken)
+        {
+            return Program.Bot.SendChatActionAsync(chatid, action, cancellationToken);
+        }
 
-		public static string FormatHTML(this string str)
-		{
-			return str.Replace("&", "&amp;").Replace(">", "&gt;").Replace("<", "&lt;");
-		}
-	}
+        public static string FormatHTML(this string str)
+        {
+            return str.Replace("&", "&amp;").Replace(">", "&gt;").Replace("<", "&lt;");
+        }
+    }
 
-	public static class Helpers
-	{
-		public static string GenerateFilename(string username)
-		{
-			int counter = 0;
-			string filename;
-			var exists = false;
-			do {
-				filename = DateTime.UtcNow.ToString("yyMMddHHmmssff-") + (username == "" ? counter.ToString() : username);
-				exists = Directory.GetFiles(Directory.GetCurrentDirectory()).Where(x => x.Contains(filename)).Any();
-				counter++;
-			} while (exists);
-			return filename;
-		}
+    public static class Helpers
+    {
+        public static string GenerateFilename(string username)
+        {
+            int counter = 0;
+            string filename;
+            var exists = false;
+            do
+            {
+                filename = DateTime.UtcNow.ToString("yyMMddHHmmssff-") + (username == "" ? counter.ToString() : username);
+                exists = Directory.GetFiles(Directory.GetCurrentDirectory()).Where(x => x.Contains(filename)).Any();
+                counter++;
+            } while (exists);
+            return filename;
+        }
 
-		public static string NormalizeOutput(this string output, string path, string filename)
-		{
+        public static string NormalizeOutput(this string output, string path, string filename)
+        {
             path = path.Replace('\\', '/');
             var paths = new[] { path, path.Replace('/', '\\'), path.Replace("/", "\\\\") };
             foreach (var p in paths)
@@ -94,22 +92,23 @@ namespace LilyPondBot
                     .Replace(p + ":", "")
                     .Replace(p, filename);
             }
-			return output
-				.Replace(Environment.NewLine + Environment.NewLine, Environment.NewLine)
-				.Replace(string.Format(@"\include ""{0}"" ", Settings.LilySettingsPath), "");
-		}
+            return output
+                .Replace(Environment.NewLine + Environment.NewLine, Environment.NewLine)
+                .Replace(string.Format(@"\include ""{0}"" ", Settings.LilySettingsPath), "");
+        }
 
-		public static Task<Message> SecureSend(this string text, long chatid, string path)
-		{
-			if (text.Length < 3000)
-				return Api.Send(chatid, text.FormatHTML());
-			else {
-				File.WriteAllLines(path, text.Split('\n'));
-				return Api.SendFile(chatid, path);
-			}
-		}
+        public static Task<Message> SecureSend(this string text, long chatid, string path)
+        {
+            if (text.Length < 3000)
+                return Api.Send(chatid, text.FormatHTML());
+            else
+            {
+                File.WriteAllLines(path, text.Split('\n'));
+                return Api.SendFile(chatid, path);
+            }
+        }
 
-        
-	}
+
+    }
 }
 
