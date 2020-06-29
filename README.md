@@ -1,6 +1,6 @@
 # LilyPondBot
 
-## Now deprecated, see [LilyPondBot-py](github.com/renyhp/LilyPondBot-py)
+## Now deprecated, see [LilyPondBot-py](http://github.com/renyhp/LilyPondBot-py)
 
 A Telegram bot to compile LilyPond code.
 
