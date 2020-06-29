@@ -1,4 +1,7 @@
 # LilyPondBot
+
+## Now deprecated, see [LilyPondBot-py](github.com/renyhp/LilyPondBot-py)
+
 A Telegram bot to compile LilyPond code.
 
 Created with Monodevelop on Xubuntu, run on Ubuntu. Should also work on Visual Studio / Windows, provided that you change  `Settings.LilyPondPath` in `LilyPondBot/Helpers.cs`.
